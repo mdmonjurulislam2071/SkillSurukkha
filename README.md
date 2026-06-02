@@ -1,0 +1,110 @@
+# SkillShurokkha
+
+Backend-driven freelance marketplace UI with role-based access for admins, freelancers and clients.
+
+## Stack
+
+- Frontend: Next.js, JavaScript, Tailwind CSS
+- Backend: Node.js, Express.js
+- Database: MySQL
+
+## Environment
+
+Database credentials and secrets live in `backend/.env`. Update at least:
+
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=skillshurokkha
+DB_USER=root
+DB_PASSWORD=
+JWT_SECRET=replace-with-a-long-random-secret
+```
+
+Frontend API configuration lives in `frontend/.env.local`.
+
+## Run
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The backend creates the MySQL database and tables at startup if the configured MySQL user has permission.
+
+## Verification delivery
+
+Local development uses `OTP_DEV_MODE=true`. Email and mobile OTP codes are printed by the backend and returned to the registration UI for testing.
+
+Before production:
+
+- Set `OTP_DEV_MODE=false`.
+- Configure the SMTP settings in `backend/.env` for email verification.
+- Add an SMS provider adapter in `backend/src/services/verification.js` and configure its credentials in `backend/.env`.
+- Replace `JWT_SECRET`.
+
+## Roles
+
+- `freelancer`: editable rich profile, profile picture, skills, rate, availability, project applications
+- `client`: editable profile, company information, project creation
+- `admin`: user overview and protected administration APIs
+
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `backend/.env` to seed the initial admin account at backend startup.
+
+You can also seed or update the admin explicitly:
+
+```bash
+cd backend
+npm run seed:admin
+```
+
+## Backend APIs
+
+- `/api/auth`: registration, OTP/email verification, resend verification, login and current user
+- `/api/profiles`: public profiles, editable freelancer/client profiles and profile picture upload
+- `/api/projects`: project creation, applications, shortlist, escrow funding, hire, submissions, revisions and approval
+- `/api/skills`: freelancer skill verification submissions, public badges and admin AI-score review
+- `/api/notifications`: user notification list and read state
+- `/api/payments`: role-aware escrow and released-payment history
+- `/api/admin`: user moderation, platform overview and pending skill reviews
+
+Escrow gateway funding is represented by a validated transaction reference in the MVP. Connect the selected payment provider webhook before production payment processing.
+
+## Hosted AI Video Pipeline
+
+Skill verification videos can be uploaded with `POST /api/skills/upload`. The backend:
+
+1. Stores the uploaded MP4, MOV or WEBM file.
+2. Reads media metadata with FFprobe and enforces the 5-minute limit.
+3. Extracts mono audio with FFmpeg.
+4. Sends audio to Hugging Face hosted inference using `openai/whisper-large-v3`.
+5. Stores the transcript, media metadata, basic authenticity report and preliminary score.
+6. Moves the submission to `review_ready` for admin review and badge issuance.
+
+Configure:
+
+```env
+HF_TOKEN=
+HF_ASR_MODEL=openai/whisper-large-v3
+FFMPEG_PATH=ffmpeg
+FFPROBE_PATH=ffprobe
+SKILL_VIDEO_MAX_MB=150
+```
+
+Use `GET /api/skills/pipeline-health` as an admin to verify configuration. Install FFmpeg on the host and set `HF_TOKEN` before enabling hosted analysis.
+
+The MVP authenticity report checks media structure, duration and explanation evidence. It is intentionally not described as a deepfake detector or as a fully autonomous proof of skill quality. Admin review remains required before issuing a badge.
+
+Run the disposable upload-pipeline integration test with:
+
+```bash
+cd backend
+npm run test:ai-upload
+```
