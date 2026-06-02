@@ -1,0 +1,28 @@
+{
+  "name": "skillshurokkha-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "seed:admin": "node src/scripts/seedAdmin.js",
+    "cleanup:test": "node src/scripts/cleanupTestData.js",
+    "test:ai-upload": "node src/scripts/testAiUpload.js",
+    "check": "node --check src/server.js && node --check src/routes/auth.js && node --check src/routes/profile.js && node --check src/routes/projects.js && node --check src/routes/admin.js && node --check src/routes/notifications.js && node --check src/routes/skills.js && node --check src/routes/payments.js && node --check src/services/verification.js && node --check src/services/notifications.js && node --check src/services/skillAnalysis.js && node --check src/scripts/seedAdmin.js && node --check src/scripts/cleanupTestData.js && node --check src/scripts/testAiUpload.js"
+  },
+  "dependencies": {
+    "@huggingface/inference": "^4.13.6",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.1.1",
+    "mysql2": "^3.14.0",
+    "nodemailer": "^8.0.10"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

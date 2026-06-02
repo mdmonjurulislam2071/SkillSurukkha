@@ -1,0 +1,51 @@
+@import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: #071a17;
+  background: #f5faf7;
+  font-family: "Outfit", "Hind Siliguri", sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.font-bangla {
+  font-family: "Hind Siliguri", "Outfit", sans-serif;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(18px);
+}
+
+.soft-glass {
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+}
+
+.dot-grid {
+  background-image: radial-gradient(rgba(12, 59, 50, 0.12) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
