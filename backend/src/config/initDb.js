@@ -10,6 +10,22 @@ async function addColumnIfMissing(table, column, definition) {
   if (!rows[0].count) await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`);
 }
 
+async function addIndexIfMissing(table, index, definition) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) AS count FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ?`,
+    [process.env.DB_NAME, table, index]
+  );
+  if (!rows[0].count) await pool.query(`ALTER TABLE \`${table}\` ADD ${definition}`);
+}
+
+async function dropIndexIfExists(table, index) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) AS count FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ?`,
+    [process.env.DB_NAME, table, index]
+  );
+  if (rows[0].count) await pool.query(`ALTER TABLE \`${table}\` DROP INDEX \`${index}\``);
+}
+
 async function initDb() {
   const database = process.env.DB_NAME;
   if (!/^[a-zA-Z0-9_]+$/.test(database)) throw new Error("DB_NAME may only contain letters, numbers and underscores.");
@@ -81,11 +97,16 @@ async function initDb() {
       budget DECIMAL(12,2) NOT NULL,
       deadline DATE NOT NULL,
       skills JSON NULL,
-      status ENUM('open','hired','in_progress','submitted','completed','cancelled') DEFAULT 'open',
+      requirements JSON NULL,
+      status ENUM('open','hired','in_progress','overdue','submitted','revision_required','disputed','completed','cancelled') DEFAULT 'open',
+      overdue_notified_at DATETIME NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT fk_project_client FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+  await pool.query(`ALTER TABLE projects MODIFY COLUMN status ENUM('open','hired','in_progress','overdue','submitted','revision_required','disputed','completed','cancelled') DEFAULT 'open'`);
+  await addColumnIfMissing("projects", "overdue_notified_at", "DATETIME NULL");
+  await addColumnIfMissing("projects", "requirements", "JSON NULL");
   await pool.query(`
     CREATE TABLE IF NOT EXISTS applications (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -93,6 +114,8 @@ async function initDb() {
       freelancer_id INT UNSIGNED NOT NULL,
       cover_letter TEXT NOT NULL,
       proposed_budget DECIMAL(12,2) NOT NULL,
+      estimated_delivery_date DATE NOT NULL,
+      attachment_url VARCHAR(500) NULL,
       status ENUM('pending','shortlisted','hired','rejected') DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY unique_application (project_id, freelancer_id),
@@ -109,12 +132,56 @@ async function initDb() {
       amount DECIMAL(12,2) NOT NULL,
       payment_method VARCHAR(80) NOT NULL,
       transaction_reference VARCHAR(180) NOT NULL,
-      status ENUM('funded','released','refunded') NOT NULL DEFAULT 'funded',
-      funded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      payment_provider VARCHAR(80) NULL,
+      provider_session_id VARCHAR(190) NULL,
+      checkout_url VARCHAR(600) NULL,
+      status ENUM('pending','funded','partially_released','released','refunded','failed') NOT NULL DEFAULT 'pending',
+      released_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+      refunded_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+      funded_at DATETIME NULL,
       released_at DATETIME NULL,
+      refunded_at DATETIME NULL,
       CONSTRAINT fk_escrow_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
       CONSTRAINT fk_escrow_client FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE,
       CONSTRAINT fk_escrow_freelancer FOREIGN KEY (freelancer_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+  await addColumnIfMissing("applications", "estimated_delivery_date", "DATE NULL");
+  await addColumnIfMissing("applications", "attachment_url", "VARCHAR(500) NULL");
+  await pool.query(`ALTER TABLE escrows MODIFY COLUMN status ENUM('pending','funded','partially_released','released','refunded','failed') NOT NULL DEFAULT 'pending'`);
+  await addColumnIfMissing("escrows", "released_amount", "DECIMAL(12,2) NOT NULL DEFAULT 0");
+  await addColumnIfMissing("escrows", "refunded_amount", "DECIMAL(12,2) NOT NULL DEFAULT 0");
+  await pool.query(`ALTER TABLE escrows MODIFY COLUMN funded_at DATETIME NULL`);
+  await addColumnIfMissing("escrows", "payment_provider", "VARCHAR(80) NULL");
+  await addColumnIfMissing("escrows", "provider_session_id", "VARCHAR(190) NULL");
+  await addColumnIfMissing("escrows", "checkout_url", "VARCHAR(600) NULL");
+  await addColumnIfMissing("escrows", "refunded_at", "DATETIME NULL");
+  await addIndexIfMissing("escrows", "idx_escrow_provider_session", "INDEX idx_escrow_provider_session (payment_provider, provider_session_id)");
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS deadline_extensions (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      project_id INT UNSIGNED NOT NULL,
+      previous_deadline DATE NOT NULL,
+      extended_deadline DATE NOT NULL,
+      reason TEXT NOT NULL,
+      created_by INT UNSIGNED NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_extension_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      CONSTRAINT fk_extension_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS project_disputes (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      project_id INT UNSIGNED NOT NULL,
+      opened_by INT UNSIGNED NOT NULL,
+      reason TEXT NOT NULL,
+      status ENUM('open','resolved') NOT NULL DEFAULT 'open',
+      resolution TEXT NULL,
+      resolved_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_dispute_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      CONSTRAINT fk_dispute_user FOREIGN KEY (opened_by) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
   await pool.query(`
@@ -124,8 +191,30 @@ async function initDb() {
       freelancer_id INT UNSIGNED NOT NULL,
       message TEXT NOT NULL,
       attachment_url VARCHAR(500) NULL,
-      status ENUM('submitted','revision_requested','approved') NOT NULL DEFAULT 'submitted',
+      repository_url VARCHAR(500) NULL,
+      live_url VARCHAR(500) NULL,
+      archive_url VARCHAR(500) NULL,
+      archive_path VARCHAR(500) NULL,
+      implementation_notes TEXT NULL,
+      status ENUM('analyzing','ai_revision_required','analysis_failed','submitted','revision_requested','approved') NOT NULL DEFAULT 'analyzing',
+      version_number INT UNSIGNED NOT NULL DEFAULT 1,
+      previous_submission_id INT UNSIGNED NULL,
       client_feedback TEXT NULL,
+      revision_details JSON NULL,
+      evaluation_score DECIMAL(5,2) NULL,
+      evaluation_provider VARCHAR(80) NULL,
+      evaluation_model VARCHAR(120) NULL,
+      evaluation_report JSON NULL,
+      evaluation_error TEXT NULL,
+      ai_badge_reference VARCHAR(255) NULL,
+      ai_qualified TINYINT(1) NOT NULL DEFAULT 0,
+      evaluated_at DATETIME NULL,
+      dispute_deadline DATETIME NULL,
+      review_deadline DATETIME NULL,
+      initial_release_at DATETIME NULL,
+      final_release_at DATETIME NULL,
+      approved_at DATETIME NULL,
+      review_reminder_stage TINYINT UNSIGNED NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       CONSTRAINT fk_submission_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
@@ -146,6 +235,159 @@ async function initDb() {
       CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
+  await pool.query(`ALTER TABLE work_submissions MODIFY COLUMN status ENUM('analyzing','ai_revision_required','analysis_failed','submitted','revision_requested','approved') NOT NULL DEFAULT 'analyzing'`);
+  await addColumnIfMissing("work_submissions", "repository_url", "VARCHAR(500) NULL");
+  await addColumnIfMissing("work_submissions", "live_url", "VARCHAR(500) NULL");
+  await addColumnIfMissing("work_submissions", "archive_url", "VARCHAR(500) NULL");
+  await addColumnIfMissing("work_submissions", "archive_path", "VARCHAR(500) NULL");
+  await addColumnIfMissing("work_submissions", "implementation_notes", "TEXT NULL");
+  await addColumnIfMissing("work_submissions", "version_number", "INT UNSIGNED NOT NULL DEFAULT 1");
+  await addColumnIfMissing("work_submissions", "previous_submission_id", "INT UNSIGNED NULL");
+  await addColumnIfMissing("work_submissions", "revision_details", "JSON NULL");
+  await addColumnIfMissing("work_submissions", "evaluation_score", "DECIMAL(5,2) NULL");
+  await addColumnIfMissing("work_submissions", "evaluation_provider", "VARCHAR(80) NULL");
+  await addColumnIfMissing("work_submissions", "evaluation_model", "VARCHAR(120) NULL");
+  await addColumnIfMissing("work_submissions", "evaluation_report", "JSON NULL");
+  await addColumnIfMissing("work_submissions", "evaluation_error", "TEXT NULL");
+  await addColumnIfMissing("work_submissions", "ai_badge_reference", "VARCHAR(255) NULL");
+  await addColumnIfMissing("work_submissions", "ai_qualified", "TINYINT(1) NOT NULL DEFAULT 0");
+  await addColumnIfMissing("work_submissions", "evaluated_at", "DATETIME NULL");
+  await addColumnIfMissing("work_submissions", "dispute_deadline", "DATETIME NULL");
+  await addColumnIfMissing("work_submissions", "review_deadline", "DATETIME NULL");
+  await addColumnIfMissing("work_submissions", "initial_release_at", "DATETIME NULL");
+  await addColumnIfMissing("work_submissions", "final_release_at", "DATETIME NULL");
+  await addColumnIfMissing("work_submissions", "approved_at", "DATETIME NULL");
+  await addColumnIfMissing("work_submissions", "review_reminder_stage", "TINYINT UNSIGNED NOT NULL DEFAULT 0");
+  await addIndexIfMissing("work_submissions", "idx_submission_version", "INDEX idx_submission_version (project_id, version_number)");
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS freelancer_reviews (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      project_id INT UNSIGNED NOT NULL UNIQUE,
+      client_id INT UNSIGNED NOT NULL,
+      freelancer_id INT UNSIGNED NOT NULL,
+      submission_id INT UNSIGNED NULL,
+      rating TINYINT UNSIGNED NOT NULL,
+      comment TEXT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_review_freelancer (freelancer_id, created_at),
+      CONSTRAINT fk_review_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      CONSTRAINT fk_review_client FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE,
+      CONSTRAINT fk_review_freelancer FOREIGN KEY (freelancer_id) REFERENCES users(id) ON DELETE CASCADE,
+      CONSTRAINT fk_review_submission FOREIGN KEY (submission_id) REFERENCES work_submissions(id) ON DELETE SET NULL,
+      CONSTRAINT chk_review_rating CHECK (rating BETWEEN 1 AND 5)
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS wallet_transactions (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      user_id INT UNSIGNED NOT NULL,
+      project_id INT UNSIGNED NULL,
+      escrow_id INT UNSIGNED NULL,
+      submission_id INT UNSIGNED NULL,
+      type ENUM('ai_release','final_release','withdrawal','adjustment') NOT NULL,
+      amount DECIMAL(12,2) NOT NULL,
+      description VARCHAR(500) NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_wallet_user (user_id, created_at),
+      CONSTRAINT fk_wallet_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      CONSTRAINT fk_wallet_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
+      CONSTRAINT fk_wallet_escrow FOREIGN KEY (escrow_id) REFERENCES escrows(id) ON DELETE SET NULL,
+      CONSTRAINT fk_wallet_submission FOREIGN KEY (submission_id) REFERENCES work_submissions(id) ON DELETE SET NULL
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS withdrawal_requests (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      freelancer_id INT UNSIGNED NOT NULL,
+      amount DECIMAL(12,2) NOT NULL,
+      method ENUM('bank','bkash','nagad','rocket','paypal','wise') NOT NULL,
+      account_details JSON NOT NULL,
+      status ENUM('pending','processing','paid','rejected') NOT NULL DEFAULT 'pending',
+      transaction_reference VARCHAR(190) NULL,
+      admin_note TEXT NULL,
+      processed_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_withdrawal_freelancer (freelancer_id, status, created_at),
+      CONSTRAINT fk_withdrawal_freelancer FOREIGN KEY (freelancer_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS conversations (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      project_id INT UNSIGNED NOT NULL,
+      application_id INT UNSIGNED NULL,
+      client_id INT UNSIGNED NOT NULL,
+      freelancer_id INT UNSIGNED NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_conversation_pair (project_id, freelancer_id),
+      CONSTRAINT fk_conversation_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      CONSTRAINT fk_conversation_application FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE,
+      CONSTRAINT fk_conversation_client FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE,
+      CONSTRAINT fk_conversation_freelancer FOREIGN KEY (freelancer_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+  await addColumnIfMissing("conversations", "application_id", "INT UNSIGNED NULL");
+  await pool.query(`UPDATE conversations c JOIN applications a ON a.project_id = c.project_id AND a.freelancer_id = c.freelancer_id SET c.application_id = COALESCE(c.application_id, a.id)`);
+  await addIndexIfMissing("conversations", "unique_conversation_pair", "UNIQUE KEY unique_conversation_pair (project_id, freelancer_id)");
+  await addIndexIfMissing("conversations", "unique_conversation_application", "UNIQUE KEY unique_conversation_application (application_id)");
+  await pool.query(`
+    SET @project_unique_name = (
+      SELECT INDEX_NAME FROM information_schema.statistics
+      WHERE table_schema = DATABASE() AND table_name = 'conversations' AND column_name = 'project_id' AND NON_UNIQUE = 0
+      AND INDEX_NAME NOT IN ('PRIMARY', 'unique_conversation_pair')
+      GROUP BY INDEX_NAME HAVING COUNT(*) = 1 LIMIT 1
+    )
+  `);
+  await pool.query(`SET @drop_project_unique = IF(@project_unique_name IS NULL, 'SELECT 1', CONCAT('ALTER TABLE conversations DROP INDEX \`', @project_unique_name, '\`'))`);
+  await pool.query(`PREPARE drop_project_unique_stmt FROM @drop_project_unique`);
+  await pool.query(`EXECUTE drop_project_unique_stmt`);
+  await pool.query(`DEALLOCATE PREPARE drop_project_unique_stmt`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      conversation_id INT UNSIGNED NOT NULL,
+      sender_id INT UNSIGNED NOT NULL,
+      message TEXT NOT NULL,
+      attachment_url VARCHAR(500) NULL,
+      read_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_message_conversation (conversation_id, created_at, id),
+      CONSTRAINT fk_message_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+      CONSTRAINT fk_message_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+  await addColumnIfMissing("messages", "edited_at", "DATETIME NULL");
+  await addColumnIfMissing("messages", "deleted_at", "DATETIME NULL");
+  await addColumnIfMissing("messages", "reactions", "JSON NULL");
+  await addColumnIfMissing("messages", "project_id", "INT UNSIGNED NULL");
+  await pool.query(`UPDATE messages m JOIN conversations c ON c.id = m.conversation_id SET m.project_id = COALESCE(m.project_id, c.project_id)`);
+  await addIndexIfMissing("conversations", "idx_conversation_project", "INDEX idx_conversation_project (project_id)");
+  await addIndexIfMissing("conversations", "idx_conversation_application", "INDEX idx_conversation_application (application_id)");
+  await dropIndexIfExists("conversations", "unique_conversation_application");
+  await dropIndexIfExists("conversations", "unique_conversation_pair");
+  await pool.query(`
+    UPDATE messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    JOIN (
+      SELECT client_id, freelancer_id, MIN(id) AS keep_id
+      FROM conversations
+      GROUP BY client_id, freelancer_id
+    ) keeper ON keeper.client_id = c.client_id AND keeper.freelancer_id = c.freelancer_id
+    SET m.conversation_id = keeper.keep_id
+    WHERE m.conversation_id <> keeper.keep_id
+  `);
+  await pool.query(`
+    DELETE c FROM conversations c
+    JOIN (
+      SELECT client_id, freelancer_id, MIN(id) AS keep_id
+      FROM conversations
+      GROUP BY client_id, freelancer_id
+    ) keeper ON keeper.client_id = c.client_id AND keeper.freelancer_id = c.freelancer_id
+    WHERE c.id <> keeper.keep_id
+  `);
+  await addIndexIfMissing("conversations", "unique_conversation_people", "UNIQUE KEY unique_conversation_people (client_id, freelancer_id)");
   await pool.query(`
     CREATE TABLE IF NOT EXISTS skill_verifications (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

@@ -2,6 +2,7 @@ node_modules
 .env
 uploads/*
 !uploads/.gitkeep
+private/
 uploads/skills/*
 !uploads/skills/.gitkeep
 .server-output.log

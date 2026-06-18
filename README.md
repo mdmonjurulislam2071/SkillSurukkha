@@ -77,6 +77,10 @@ npm run seed:admin
 
 Escrow gateway funding is represented by a validated transaction reference in the MVP. Connect the selected payment provider webhook before production payment processing.
 
+Overdue projects are detected by a background deadline sync. Clients can extend the deadline, request an explanation, cancel and refund a funded escrow when no work was submitted, or open a dispute. Submitted-work refund requests go through an administrator dispute resolution instead of an automatic refund.
+
+Project messaging uses authenticated Socket.IO connections. A realtime conversation is created after a client hires a freelancer. Messages are persisted in MySQL and support unread counts, typing indicators and sent/seen state.
+
 ## Hosted AI Video Pipeline
 
 Skill verification videos can be uploaded with `POST /api/skills/upload`. The backend:
@@ -108,3 +112,11 @@ Run the disposable upload-pipeline integration test with:
 cd backend
 npm run test:ai-upload
 ```
+
+## AI project requirement review
+
+Clients define one acceptance requirement per line when creating a project. A hired freelancer can submit a ZIP source archive, repository URL, live demo URL and implementation notes. The backend safely inspects text source files without executing the project and creates a requirement-by-requirement report.
+
+Configure `OPENAI_API_KEY` to use the OpenAI Responses API with structured output. `OPENAI_PROJECT_REVIEW_MODEL` defaults to `gpt-5.5`. A score above 50% creates a requirement-match badge and sends the version to client review. A score above 70% additionally starts a 24-hour dispute hold; if no dispute is opened, 90% of escrow is released to the freelancer wallet. Client approval releases all remaining escrow to the freelancer.
+
+Every resubmission is stored as an immutable numbered version. Revision requests must cite original requirements and include an issue, expected result and evidence. Once completed, the client can download any archived version. Freelancers can request wallet withdrawals through bank, bKash, Nagad, Rocket, PayPal or Wise; administrators record the external payout reference.

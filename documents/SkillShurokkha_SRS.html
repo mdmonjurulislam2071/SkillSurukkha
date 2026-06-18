@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SkillShurokkha SRS</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #12201c; font-family: Arial, Helvetica, sans-serif; line-height: 1.45; background: #fff; }
+    h1, h2, h3, h4 { color: #0c3b32; margin: 0 0 10px; }
+    h1 { font-size: 30px; text-align: center; margin-top: 40px; }
+    h2 { font-size: 22px; padding-bottom: 5px; border-bottom: 2px solid #10b981; margin-top: 28px; }
+    h3 { font-size: 17px; margin-top: 18px; }
+    h4 { font-size: 14px; margin-top: 14px; }
+    p { margin: 6px 0 10px; text-align: justify; }
+    ul { margin: 6px 0 12px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 12px; }
+    th, td { border: 1px solid #aebbb7; padding: 7px 8px; vertical-align: top; }
+    th { background: #e8f7ef; color: #0c3b32; text-align: left; }
+    .cover { min-height: 92vh; padding-top: 32px; text-align: center; }
+    .doc-title { width: 86%; margin: 0 auto 62px; background: #f79646; color: #000; padding: 5px 10px; font-family: Georgia, 'Times New Roman', serif; font-size: 22px; font-weight: 800; letter-spacing: .2px; }
+    .cover-lines { width: 88%; margin: 0 auto; text-align: left; font-family: Georgia, 'Times New Roman', serif; font-size: 20px; }
+    .cover-row { border-top: 1px solid #222; padding: 3px 8px; }
+    .cover-row:last-child { border-bottom: 1px solid #222; }
+    .revision-title { background: #55b6ca; color: #000; border: 1px solid #222; border-bottom: 0; padding: 5px 9px; font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 800; }
+    .revision-table { margin-top: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 18px; text-align: center; }
+    .revision-table th { background: #d9d9d9; color: #000; text-align: center; font-size: 18px; }
+    .revision-table td { border-color: #222; padding: 5px 8px; }
+    .meta { margin: 34px auto 0; width: 72%; text-align: left; font-size: 14px; }
+    .page-break { break-before: page; page-break-before: always; }
+    .toc td { border: none; border-bottom: 1px dotted #aebbb7; padding: 4px; }
+    .toc .page { width: 42px; text-align: right; }
+    .note { background: #eefcf5; border-left: 4px solid #10b981; padding: 10px 12px; margin: 12px 0; }
+    .fig { border: 1px solid #d8e5e1; border-radius: 8px; margin: 14px 0 4px; overflow: hidden; background: #f7fbf9; }
+    .figure-block { display: table; width: 100%; break-inside: avoid; page-break-inside: avoid; margin-top: 18px; }
+    .figure-block h4 { break-after: avoid; page-break-after: avoid; margin-bottom: 8px; }
+    .figure-block .fig { break-before: avoid; page-break-before: avoid; break-inside: avoid; page-break-inside: avoid; margin-top: 0; }
+    .caption { text-align: center; font-weight: 700; color: #0c3b32; font-size: 12px; margin: 6px 0 16px; }
+    .screen { min-height: 360px; display: grid; grid-template-columns: 210px 1fr; background: #f5faf7; }
+    .landing-screen { min-height: 390px; padding: 20px; background: #071a17; color: white; position: relative; overflow: hidden; }
+    .landing-header { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+    .landing-nav { display: flex; gap: 16px; color: rgba(255,255,255,.72); }
+    .landing-hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 20px; margin-top: 48px; align-items: center; }
+    .hero-title { font-size: 34px; line-height: 1.05; font-weight: 900; margin: 12px 0; color: white; }
+    .hero-accent { color: #6ee7b7; }
+    .hero-panel { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 18px; padding: 16px; }
+    .auth-modal { min-height: 360px; display: grid; place-items: center; background: linear-gradient(135deg, #071a17, #0c3b32); }
+    .auth-card { width: 420px; background: white; border-radius: 18px; padding: 24px; box-shadow: 0 20px 60px rgba(7,26,23,.2); }
+    .role-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; background: #f1f5f9; padding: 4px; border-radius: 12px; }
+    .role-tabs span { text-align: center; padding: 8px; border-radius: 9px; font-weight: 700; font-size: 12px; }
+    .role-tabs .active { background: #fff; color: #047857; box-shadow: 0 4px 12px rgba(15,23,42,.08); }
+    .sidebar { background: #071a17; color: white; padding: 22px 18px; }
+    .brand { font-size: 18px; font-weight: 800; margin-bottom: 22px; }
+    .side-item { padding: 11px 12px; border-radius: 10px; margin: 8px 0; font-size: 13px; }
+    .side-item.active { background: #34d399; color: white; }
+    .main { padding: 22px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .pill { display: inline-block; border-radius: 999px; padding: 6px 10px; background: #d1fae5; color: #047857; font-weight: 700; font-size: 11px; }
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .card { background: white; border: 1px solid #e1ece8; border-radius: 8px; padding: 14px; box-shadow: 0 6px 18px rgba(7,26,23,.08); }
+    .card b { display: block; font-size: 20px; color: #0c3b32; margin-top: 8px; }
+    .grid2 { display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px; margin-top: 14px; }
+    .bar { height: 12px; border-radius: 9px; background: #d8eee7; overflow: hidden; margin: 8px 0; }
+    .bar span { display: block; height: 100%; background: #10b981; }
+    .login-screen { display: grid; grid-template-columns: 1fr 1fr; min-height: 340px; }
+    .login-left { background: #071a17; color: white; padding: 34px; }
+    .login-right { background: white; padding: 34px; }
+    .input { height: 38px; border: 1px solid #d6e2de; border-radius: 8px; margin: 9px 0; background: #f8fbfa; }
+    .btn { display: inline-block; background: #0c3b32; color: white; padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 12px; margin-top: 8px; }
+    .project-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .mock-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+    .mock-table td { border: 0; background: white; border-top: 1px solid #e1ece8; border-bottom: 1px solid #e1ece8; }
+    .diagram { width: 100%; height: auto; display: block; background: white; }
+    .small { font-size: 12px; color: #526b65; }
+    .center { text-align: center; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="doc-title">Software Requirement Specification (SRS)</div>
+    <div class="cover-lines">
+      <div class="cover-row"><b>Project Name:</b> SkillShurokkha - AI Verified Freelance Marketplace with Secure Payment</div>
+      <div class="cover-row"><b>Date:</b> June 05, 2026</div>
+      <div class="cover-row"><b>Version:</b> v7.0</div>
+      <div class="cover-row"><b>By:</b> Group SkillShurokkha</div>
+      <div class="cover-row"><b>Members:</b> Md Monjurul Islam (2039), Maisha Khatun (2085), Md Rubel Mia (2163)</div>
+    </div>
+  </section>
+
+  <section class="page-break">
+    <div class="revision-title">Revision history</div>
+    <table class="revision-table">
+      <tr><th>Version</th><th>Author</th><th>Version Description</th><th>Date Completed</th></tr>
+      <tr><td>V1.0</td><td>Md Monjurul Islam (2039)<br>Maisha Khatun (2085)<br>Md Rubel Mia (2163)</td><td>1st Version of SRS based on project idea and scope</td><td>04-01-2026</td></tr>
+      <tr><td>V2.0</td><td>Md Monjurul Islam (2039)<br>Maisha Khatun (2085)<br>Md Rubel Mia (2163)</td><td>2nd Version of SRS based on user roles and core features</td><td>18-01-2026</td></tr>
+      <tr><td>V3.0</td><td>Md Monjurul Islam (2039)<br>Maisha Khatun (2085)<br>Md Rubel Mia (2163)</td><td>3rd Version of SRS based on project management and escrow flow</td><td>01-02-2026</td></tr>
+      <tr><td>V4.0</td><td>Md Monjurul Islam (2039)<br>Maisha Khatun (2085)<br>Md Rubel Mia (2163)</td><td>4th Version of SRS based on AI skill verification workflow</td><td>08-02-2026</td></tr>
+      <tr><td>V5.0</td><td>Md Monjurul Islam (2039)<br>Maisha Khatun (2085)<br>Md Rubel Mia (2163)</td><td>5th Version of SRS based on UI design and dashboard screens</td><td>22-02-2026</td></tr>
+      <tr><td>V6.0</td><td>Md Monjurul Islam (2039)<br>Maisha Khatun (2085)<br>Md Rubel Mia (2163)</td><td>6th Version of SRS based on UML and system design diagrams</td><td>01-03-2026</td></tr>
+      <tr><td>V7.0</td><td>Md Monjurul Islam (2039)<br>Maisha Khatun (2085)<br>Md Rubel Mia (2163)</td><td>7th Version of SRS based on final SkillShurokkha project</td><td>05-06-2026</td></tr>
+    </table>
+    <h2>Review History</h2>
+    <table>
+      <tr><th>Approving Party</th><th>Version Approved</th><th>Signature</th><th>Date</th></tr>
+      <tr><td>Course Teacher / Supervisor</td><td>v1.0</td><td></td><td></td></tr>
+    </table>
+    <h2>Approval History</h2>
+    <table>
+      <tr><th>Reviewer</th><th>Version Reviewed</th><th>Signature</th><th>Date</th></tr>
+      <tr><td>Project Evaluator</td><td>v1.0</td><td></td><td></td></tr>
+    </table>
+  </section>
+
+  <section class="page-break">
+    <h2>Table of Contents</h2>
+    <table class="toc">
+      <tr><td>1. Introduction</td><td class="page">01</td></tr>
+      <tr><td>1.1 Product Scope</td><td class="page">01</td></tr>
+      <tr><td>1.2 Product Value</td><td class="page">02</td></tr>
+      <tr><td>1.3 Intended Audience</td><td class="page">02</td></tr>
+      <tr><td>1.4 Intended Use</td><td class="page">02</td></tr>
+      <tr><td>1.5 General Description</td><td class="page">03</td></tr>
+      <tr><td>2. Functional Requirements</td><td class="page">04</td></tr>
+      <tr><td>2.1 Design Requirements</td><td class="page">04</td></tr>
+      <tr><td>2.2 Graphics Requirements</td><td class="page">04</td></tr>
+      <tr><td>2.3 Operating System Requirements</td><td class="page">05</td></tr>
+      <tr><td>2.4 User Interface Design</td><td class="page">05</td></tr>
+      <tr><td>2.5 UML and System Design</td><td class="page">18</td></tr>
+      <tr><td>2.6 Constraints</td><td class="page">24</td></tr>
+      <tr><td>3. External Interface Requirements</td><td class="page">25</td></tr>
+      <tr><td>4. Non-functional Requirements</td><td class="page">27</td></tr>
+      <tr><td>5. Definitions and Acronyms</td><td class="page">29</td></tr>
+    </table>
+  </section>
+
+  <section class="page-break">
+    <h2>1. Introduction</h2>
+    <p>This Software Requirement Specification document describes the requirements of SkillShurokkha, an AI verified freelance marketplace with secure payment support. The system is designed to reduce trust problems in freelancing by verifying freelancer skills, managing client projects, protecting payment through escrow, and supporting communication between clients, freelancers, and administrators.</p>
+
+    <h3>1.1 Product Scope</h3>
+    <h4>1.1.1 Benefits</h4>
+    <ul>
+      <li>Helps freelancers prove their real skills through video based verification.</li>
+      <li>Helps clients hire trustworthy and skilled freelancers.</li>
+      <li>Reduces payment fraud by locking payment in escrow before work starts.</li>
+      <li>Provides project, messaging, notification, and dispute handling in one platform.</li>
+      <li>Supports Bangla and English interface for better local usability.</li>
+    </ul>
+    <h4>1.1.2 Objectives</h4>
+    <ul>
+      <li>To provide role based accounts for freelancers, clients, and administrators.</li>
+      <li>To allow freelancers to submit skill verification videos and receive AI scores.</li>
+      <li>To allow clients to create projects, review applicants, fund escrow, and hire freelancers.</li>
+      <li>To provide secure work submission, revision, approval, and payment release workflows.</li>
+      <li>To notify users about important project, payment, message, and verification events.</li>
+    </ul>
+    <h4>1.1.3 Goals</h4>
+    <ul>
+      <li>To build a trusted Bangladeshi freelance marketplace.</li>
+      <li>To improve transparency between clients and freelancers.</li>
+      <li>To provide a modern web platform that is easy to use on desktop and mobile devices.</li>
+    </ul>
+
+    <h3>1.2 Product Value</h3>
+    <p>SkillShurokkha creates value by solving two major freelancing problems: fake skill claims and insecure payment. Freelancers can build credibility through verified badges and work history. Clients can select applicants with more confidence. Escrow payment protects both parties because the client funds the project before hiring, while the freelancer receives payment only after approved work submission.</p>
+
+    <h3>1.3 Intended Audience</h3>
+    <ul>
+      <li>Freelancers such as designers, developers, writers, editors, and digital service providers.</li>
+      <li>Clients, small businesses, startups, and agencies looking for verified talent.</li>
+      <li>Platform administrators responsible for verification, payment review, and dispute handling.</li>
+      <li>Teachers, supervisors, and evaluators who will review the software project.</li>
+    </ul>
+
+    <h3>1.4 Intended Use</h3>
+    <p>Freelancers use SkillShurokkha to register, complete their profile, apply to projects, submit skill verification videos, communicate with clients, submit work, and receive payments. Clients use the system to post projects, review applications, shortlist applicants, fund escrow, hire freelancers, review submitted work, request revisions, and approve payment release. Administrators use the system to monitor users, review skill verifications, confirm manual payments, and resolve disputes.</p>
+
+    <h3>1.5 General Description</h3>
+    <p>SkillShurokkha is a web based freelance marketplace application. The application includes authentication, role based dashboards, project management, proposal submission, AI assisted skill verification, escrow payment, real time messaging, notifications, and administrator review features. The frontend is built with Next.js and React. The backend is built with Node.js and Express. Data is stored in a relational database, and payment providers such as bKash, Nagad, bank transfer, or development gateway can be integrated through payment provider modules.</p>
+  </section>
+
+  <section class="page-break">
+    <h2>2. Functional Requirements</h2>
+    <h3>2.1 Design Requirements</h3>
+    <ul>
+      <li>The system shall have separate dashboard experiences for admin, freelancer, and client users.</li>
+      <li>The system shall use a sidebar based dashboard layout for quick navigation.</li>
+      <li>The interface shall support both Bangla and English language modes.</li>
+      <li>The system shall use responsive layouts so that pages work on desktop and mobile screens.</li>
+      <li>The design shall use clear visual states for active navigation, unread notifications, project status, payment status, and verification status.</li>
+    </ul>
+
+    <h3>2.2 Graphics Requirements</h3>
+    <ul>
+      <li>The system shall use icons for navigation, project actions, payment, message, notification, verification, and settings controls.</li>
+      <li>The dashboard shall use cards to show statistics such as active projects, profile completion, payment summary, and verification status.</li>
+      <li>The project and applicant pages shall use visual cards and badges for status readability.</li>
+      <li>The application shall use a consistent green, mint, cyan, and white visual theme.</li>
+      <li>All UI graphics shall load quickly and remain readable on low bandwidth devices.</li>
+    </ul>
+
+    <h3>2.3 Operating System Requirements</h3>
+    <ul>
+      <li>The web application shall run on Windows, Linux, Android, and iOS devices through a modern browser.</li>
+      <li>Supported browsers shall include Google Chrome, Microsoft Edge, Mozilla Firefox, and Safari.</li>
+      <li>Camera and microphone access shall be required only when recording or uploading skill verification media.</li>
+      <li>An internet connection shall be required for authentication, project updates, messaging, payment, and notifications.</li>
+    </ul>
+
+    <h3>2.4 User Interface Design</h3>
+    <p>The following figures represent the Figma style user interface design of the SkillShurokkha web application. These screens are based on the main workflows implemented in the project.</p>
+
+    <div class="fig">
+      <div class="landing-screen">
+        <div class="landing-header">
+          <div class="brand" style="margin:0">SkillShurokkha</div>
+          <div class="landing-nav"><span>How it works</span><span>Features</span><span>Find work</span></div>
+          <div><span class="pill">EN</span> <span class="btn" style="background:#34d399;color:#071a17;margin:0">Get started</span></div>
+        </div>
+        <div class="landing-hero">
+          <div>
+            <span class="pill">AI verified freelance marketplace</span>
+            <div class="hero-title">Own your skills,<br><span class="hero-accent">move forward securely.</span></div>
+            <p style="color:#cce8df;text-align:left">Build a confident freelance career with AI verified skills, blockchain style badges, secure escrow payment, project management, real time messages, and Bangla friendly support.</p>
+            <span class="btn" style="background:#34d399;color:#071a17">Find work</span>
+            <span class="btn" style="background:transparent;border:1px solid rgba(255,255,255,.25)">Hire talent</span>
+          </div>
+          <div class="hero-panel">
+            <div class="cards" style="grid-template-columns:1fr 1fr">
+              <div class="card"><span class="small">Active users</span><b>50K+</b></div>
+              <div class="card"><span class="small">Escrow safety</span><b>99%</b></div>
+            </div>
+            <div class="card" style="margin-top:12px"><h4>Skill verification</h4><div class="bar"><span style="width:82%"></span></div><p class="small">AI score, admin review, verified badge</p></div>
+            <div class="card" style="margin-top:12px"><h4>Protected project flow</h4><p class="small">Apply, shortlist, fund escrow, hire, submit, approve, release payment.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.1: Landing page</div>
+    <p>The Landing Page is the public first screen of SkillShurokkha. It presents the platform brand, language switch, sign in/get started actions, and main value proposition: AI verified skills, trusted hiring, and secure escrow payment. The design follows the actual project theme with dark green background, mint action buttons, and trust focused dashboard preview cards.</p>
+
+    <div class="fig">
+      <div class="auth-modal">
+        <div class="auth-card">
+          <h3>Welcome to SkillShurokkha</h3>
+          <p class="small">Create a new account or sign in with email/mobile and password.</p>
+          <div class="role-tabs"><span class="active">Freelancer</span><span>Client</span></div>
+          <div class="input"></div><div class="input"></div><div class="input"></div>
+          <span class="btn">Create account</span>
+          <p class="small" style="margin-top:14px">Role selection controls project permissions, verification access, and dashboard navigation.</p>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.2: Authentication and role selection modal</div>
+    <p>The Authentication Modal is used for registration and login in the current web project. During registration, users select either Freelancer or Client role. This selected role determines access to project application, project posting, payment, skill verification, and dashboard features.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar">
+          <div class="brand">SkillShurokkha</div>
+          <div class="side-item active">Dashboard</div>
+          <div class="side-item">Projects</div>
+          <div class="side-item">Skill Verify</div>
+          <div class="side-item">Payments</div>
+          <div class="side-item">Messages</div>
+          <div class="side-item">Notifications</div>
+        </div>
+        <div class="main">
+          <div class="topbar"><h3>Welcome, Freelancer</h3><span class="pill">Profile 82%</span></div>
+          <div class="cards">
+            <div class="card">Applied Projects<b>12</b></div>
+            <div class="card">Active Work<b>3</b></div>
+            <div class="card">Verified Skills<b>5</b></div>
+            <div class="card">Unread Alerts<b>9</b></div>
+          </div>
+          <div class="grid2">
+            <div class="card"><h4>Recommended Projects</h4><div class="bar"><span style="width:70%"></span></div><div class="bar"><span style="width:46%"></span></div><div class="bar"><span style="width:88%"></span></div></div>
+            <div class="card"><h4>Skill Verification</h4><p class="small">Latest submission is ready for review.</p><span class="btn">Verify a skill</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.3: Freelancer dashboard</div>
+    <p>The Freelancer Dashboard displays profile completion, applied projects, active work, verified skills, latest verification status, and recommended projects. It provides quick access to skill verification and project browsing.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Client Panel</div><div class="side-item active">Projects</div><div class="side-item">Applicants</div><div class="side-item">Payments</div><div class="side-item">Messages</div></div>
+        <div class="main">
+          <div class="topbar"><h3>Your Projects</h3><span class="btn">Create project</span></div>
+          <div class="project-list">
+            <div class="card"><h4>Website Design</h4><p class="small">Budget: BDT 25,000 | Status: Open</p><span class="pill">Applicants 8</span></div>
+            <div class="card"><h4>Mobile App UI</h4><p class="small">Budget: BDT 40,000 | Status: In Progress</p><span class="pill">Escrow funded</span></div>
+            <div class="card"><h4>Logo Branding</h4><p class="small">Budget: BDT 12,000 | Status: Submitted</p><span class="pill">Review work</span></div>
+            <div class="card"><h4>Content Writing</h4><p class="small">Budget: BDT 8,000 | Status: Completed</p><span class="pill">Released</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.4: Client project management page</div>
+    <p>The Client Project Management Page allows clients to create projects, monitor status, view applicants, fund escrow, review submitted work, request revision, approve work, or open disputes when needed.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Verification</div><div class="side-item active">Skill Verify</div><div class="side-item">Badges</div><div class="side-item">Settings</div></div>
+        <div class="main">
+          <h3>Submit Skill Verification</h3>
+          <div class="grid2">
+            <div class="card"><h4>Upload skill video</h4><div class="input"></div><div class="input"></div><div class="bar"><span style="width:58%"></span></div><span class="btn">Submit for AI analysis</span></div>
+            <div class="card"><h4>Verification Rules</h4><p class="small">Maximum 5 minutes video with visible work process and clear audio explanation.</p><p><span class="pill">Score 80+ = Badge</span></p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.5: Skill verification page</div>
+    <p>The Skill Verification Page lets freelancers upload or submit short recorded work videos. The system validates the submission, starts AI analysis, and sends the result to administrators for final review.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Admin</div><div class="side-item active">Dashboard</div><div class="side-item">Notifications</div><div class="side-item">Settings</div></div>
+        <div class="main">
+          <div class="topbar"><h3>Admin Dashboard</h3><span class="pill">Review Center</span></div>
+          <div class="cards">
+            <div class="card">Users<b>50K+</b></div>
+            <div class="card">Pending Skills<b>14</b></div>
+            <div class="card">Open Disputes<b>3</b></div>
+            <div class="card">Escrow Reviews<b>5</b></div>
+          </div>
+          <table class="mock-table">
+            <tr><td>Skill verification ready</td><td><span class="pill">Review</span></td></tr>
+            <tr><td>New dispute opened</td><td><span class="pill">Resolve</span></td></tr>
+            <tr><td>Manual payment pending</td><td><span class="pill">Confirm</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.6: Admin dashboard and review center</div>
+    <p>The Admin Dashboard provides an overview of users, verification submissions, disputes, and payment review items. Administrators can review AI skill results, resolve disputes, and confirm manual escrow payments.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Client Panel</div><div class="side-item">Projects</div><div class="side-item active">Applicants</div><div class="side-item">Messages</div><div class="side-item">Payments</div></div>
+        <div class="main">
+          <div class="topbar"><h3>Applicants for Project</h3><span class="pill">8 proposals</span></div>
+          <table class="mock-table">
+            <tr><td><b>Rahim Uddin</b><br><span class="small">Frontend Developer | Verified Skill Score 92</span></td><td><span class="pill">Shortlist</span></td><td><span class="pill">Message</span></td></tr>
+            <tr><td><b>Nusrat Jahan</b><br><span class="small">UI Designer | Verified Skill Score 87</span></td><td><span class="pill">View Profile</span></td><td><span class="pill">Hire</span></td></tr>
+            <tr><td><b>Tanvir Hasan</b><br><span class="small">Full Stack Developer | Proposal attached</span></td><td><span class="pill">Review</span></td><td><span class="pill">Reject</span></td></tr>
+          </table>
+          <div class="card"><h4>Application Review Flow</h4><p class="small">Client can view applicant profile, shortlist, message, fund escrow, and hire after selecting a freelancer.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.7: Applicants list page</div>
+    <p>The Applicants Page appears after a client opens the applicant list for a project. It shows freelancer name, profile summary, verified skill score, proposal details, and action buttons for shortlist, message, reject, or hire. This design follows the actual project flow where applicants are connected to project applications.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Applicant</div><div class="side-item">Projects</div><div class="side-item active">Applicant Details</div><div class="side-item">Messages</div></div>
+        <div class="main">
+          <div class="topbar"><h3>Applicant Details</h3><span class="btn">Start Message</span></div>
+          <div class="grid2">
+            <div class="card"><h4>Freelancer Profile</h4><p class="small">Name, headline, country, hourly rate, availability, bio, portfolio, and verified badges are shown here.</p><p><span class="pill">AI Score 92</span> <span class="pill">Verified Badge</span></p></div>
+            <div class="card"><h4>Proposal</h4><p class="small">Cover letter, proposed budget, estimated delivery date, and attached document preview.</p><span class="btn">Hire Freelancer</span></div>
+          </div>
+          <div class="card" style="margin-top:12px"><h4>Client Decision Tools</h4><div class="bar"><span style="width:75%"></span></div><p class="small">Shortlist, fund escrow, hire, or return to applicants list.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.8: Applicant details page</div>
+    <p>The Applicant Details Page gives the client a detailed view of a freelancer before hiring. It contains profile information, skill badges, proposal text, budget, delivery date, and buttons for messaging, escrow funding, and hiring.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Payments</div><div class="side-item">Dashboard</div><div class="side-item active">Payments</div><div class="side-item">Projects</div><div class="side-item">Notifications</div></div>
+        <div class="main">
+          <div class="topbar"><h3>Payment and Escrow</h3><span class="pill">Protected</span></div>
+          <div class="cards">
+            <div class="card">Total Escrow<b>BDT 85K</b></div>
+            <div class="card">Funded<b>BDT 40K</b></div>
+            <div class="card">Released<b>BDT 32K</b></div>
+            <div class="card">Pending<b>BDT 13K</b></div>
+          </div>
+          <table class="mock-table">
+            <tr><td>Website Design</td><td>bank_transfer</td><td><span class="pill">Pending review</span></td></tr>
+            <tr><td>Mobile App UI</td><td>bKash</td><td><span class="pill">Funded</span></td></tr>
+            <tr><td>Logo Branding</td><td>Nagad</td><td><span class="pill">Released</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.9: Payments and escrow page</div>
+    <p>The Payments Page shows escrow transactions, provider method, transaction reference, funded amount, released amount, and payment status. Clients use this section to fund escrow and freelancers use it to track released payments.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Messages</div><div class="side-item">Projects</div><div class="side-item active">Messages</div><div class="side-item">Notifications</div></div>
+        <div class="main" style="padding:0">
+          <div style="display:grid;grid-template-columns:240px 1fr;min-height:360px">
+            <div style="background:#ecfdf5;padding:16px;border-right:1px solid #cdeee1">
+              <h4>Conversations</h4>
+              <div class="card"><b>Client: Website Design</b><p class="small">Can you share today's update?</p></div>
+              <div class="card"><b>Mobile App UI</b><p class="small">File received successfully.</p></div>
+            </div>
+            <div style="padding:18px;background:linear-gradient(135deg,#ecfdf5,#f0f9ff)">
+              <h4>Project Chat</h4>
+              <div class="card" style="width:70%">Hello, I have started the homepage design.</div>
+              <div class="card" style="width:70%;margin-left:auto;background:#0c3b32;color:white">Great. Please attach the first draft.</div>
+              <div class="input" style="margin-top:70px"></div><span class="btn">Send</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.10: Real-time messages page</div>
+    <p>The Messages Page supports project based communication between client and freelancer. It includes a conversation list, chat area, attachment buttons, typing updates, message status, and send controls.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Alerts</div><div class="side-item">Dashboard</div><div class="side-item active">Notifications</div><div class="side-item">Settings</div></div>
+        <div class="main">
+          <div class="topbar"><h3>Notifications</h3><span class="btn">Mark all as read</span></div>
+          <div class="card" style="background:#ecfeff;border-color:#67e8f9"><h4>New project application</h4><p class="small">A freelancer applied to your project.</p><span class="pill">Unread</span></div>
+          <div class="card"><h4>Skill analysis ready</h4><p class="small">Your video analysis is ready for review.</p></div>
+          <div class="card"><h4>Payment released</h4><p class="small">Escrow payment was released after work approval.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.11: Notifications page</div>
+    <p>The Notifications Page lists project, payment, message, dispute, and skill verification updates. Unread notifications are highlighted. Clicking a notification routes the user to the related screen such as messages, projects, applicants, payments, or verification.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Profile</div><div class="side-item">Dashboard</div><div class="side-item active">Settings</div><div class="side-item">Skill Verify</div></div>
+        <div class="main">
+          <div class="topbar"><h3>Profile Manager</h3><span class="pill">Freelancer</span></div>
+          <div class="grid2">
+            <div class="card"><h4>Personal Information</h4><div class="input"></div><div class="input"></div><div class="input"></div><span class="btn">Save profile</span></div>
+            <div class="card"><h4>Professional Details</h4><p class="small">Skills, portfolio links, education, experience, hourly rate, company details for clients, and avatar upload.</p><div class="bar"><span style="width:82%"></span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.12: Profile and settings page</div>
+    <p>The Profile and Settings Page allows users to update personal and professional information. Freelancers can add skills, portfolio, experience, hourly rate, and availability. Clients can add company name, website, and business details.</p>
+
+    <div class="fig">
+      <div class="screen">
+        <div class="sidebar"><div class="brand">Checkout</div><div class="side-item active">Payment</div><div class="side-item">Escrow</div><div class="side-item">Confirmation</div></div>
+        <div class="main">
+          <div class="topbar"><h3>Escrow Checkout</h3><span class="pill">BDT 25,000</span></div>
+          <div class="grid2">
+            <div class="card"><h4>Choose Provider</h4><p><span class="pill">bKash</span> <span class="pill">Nagad</span> <span class="pill">Bank Transfer</span></p><div class="input"></div><span class="btn">Continue payment</span></div>
+            <div class="card"><h4>Order Summary</h4><p class="small">Project title, client, freelancer, escrow amount, provider session, and transaction reference are displayed before payment confirmation.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.13: Checkout and escrow funding page</div>
+    <p>The Checkout Page is used when a client funds escrow. It displays selected project, amount, payment provider, transaction reference, and confirmation action. Manual payment providers require admin verification before the escrow becomes funded.</p>
+
+    <div class="fig">
+      <div style="display:grid;grid-template-columns:290px 1fr;gap:18px;background:#f5faf7;padding:18px">
+        <div style="width:260px;min-height:430px;border:10px solid #111;border-radius:28px;background:#071a17;color:white;padding:18px;margin:auto">
+          <div class="brand">SkillShurokkha</div>
+          <div class="side-item active">Dashboard</div><div class="side-item">Projects</div><div class="side-item">Skill Verify</div><div class="side-item">Payments</div><div class="side-item">Messages</div><div class="side-item">Settings</div>
+        </div>
+        <div class="main">
+          <h3>Responsive Mobile Navigation</h3>
+          <div class="card"><p class="small">On mobile devices, the sidebar becomes a slide-out menu. The dashboard content uses single-column cards, full-width buttons, and readable spacing for touch interaction.</p></div>
+          <div class="cards" style="grid-template-columns:1fr 1fr"><div class="card">Mobile cards<b>1 col</b></div><div class="card">Touch buttons<b>Large</b></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Fig-2.4.14: Mobile responsive sidebar and dashboard layout</div>
+    <p>The Mobile Responsive Layout shows how the dashboard navigation adapts to smaller devices. The sidebar opens as a menu, text remains readable, controls are large enough for touch, and dashboard sections stack vertically.</p>
+  </section>
+
+  <section class="page-break">
+    <h3>2.5 UML and System Design</h3>
+    <div class="figure-block">
+    <h4>2.5.1 Context Diagram</h4>
+    <div class="fig">
+      <svg class="diagram" viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#0c3b32"/></marker></defs>
+        <rect x="340" y="150" width="220" height="120" rx="16" fill="#0c3b32"/><text x="450" y="200" text-anchor="middle" fill="white" font-size="18" font-weight="700">SkillShurokkha</text><text x="450" y="225" text-anchor="middle" fill="#a7f3d0" font-size="13">Marketplace System</text>
+        <g fill="#f1fbf6" stroke="#10b981" stroke-width="2"><rect x="30" y="45" width="170" height="62" rx="10"/><rect x="30" y="315" width="170" height="62" rx="10"/><rect x="700" y="45" width="170" height="62" rx="10"/><rect x="700" y="315" width="170" height="62" rx="10"/><rect x="365" y="20" width="170" height="62" rx="10"/><rect x="365" y="345" width="170" height="62" rx="10"/></g>
+        <g fill="#0c3b32" font-size="14" font-weight="700"><text x="115" y="82" text-anchor="middle">Freelancer</text><text x="115" y="352" text-anchor="middle">Client</text><text x="785" y="82" text-anchor="middle">Admin</text><text x="785" y="352" text-anchor="middle">Payment Gateway</text><text x="450" y="57" text-anchor="middle">AI Service</text><text x="450" y="382" text-anchor="middle">Database</text></g>
+        <g stroke="#0c3b32" stroke-width="2" marker-end="url(#arr)"><line x1="200" y1="76" x2="340" y2="175"/><line x1="200" y1="346" x2="340" y2="245"/><line x1="700" y1="76" x2="560" y2="175"/><line x1="700" y1="346" x2="560" y2="245"/><line x1="450" y1="82" x2="450" y2="150"/><line x1="450" y1="270" x2="450" y2="345"/></g>
+      </svg>
+    </div>
+    <div class="caption">Fig-2.5.1: Context Diagram</div>
+    <p>The Context Diagram shows SkillShurokkha at the center. Freelancers submit profiles, applications, messages, and skill videos. Clients post projects, fund escrow, hire freelancers, and approve work. Administrators review users, disputes, payments, and skill verification. The system communicates with AI services, payment gateways, and the database.</p>
+    </div>
+
+    <div class="figure-block">
+    <h4>2.5.2 Use Case Diagram</h4>
+    <div class="fig">
+      <svg class="diagram" viewBox="0 0 1000 690" xmlns="http://www.w3.org/2000/svg">
+        <rect x="255" y="35" width="490" height="610" rx="12" fill="#f8fffc" stroke="#0c3b32" stroke-width="2"/>
+        <text x="500" y="62" text-anchor="middle" font-size="18" font-weight="700" fill="#0c3b32">SkillShurokkha Marketplace System</text>
+        <g fill="#fff" stroke="#0c3b32" stroke-width="1.5">
+          <ellipse cx="385" cy="120" rx="96" ry="24"/><ellipse cx="385" cy="175" rx="96" ry="24"/><ellipse cx="385" cy="230" rx="96" ry="24"/><ellipse cx="385" cy="285" rx="96" ry="24"/><ellipse cx="385" cy="340" rx="96" ry="24"/><ellipse cx="385" cy="395" rx="96" ry="24"/>
+          <ellipse cx="615" cy="120" rx="96" ry="24"/><ellipse cx="615" cy="175" rx="96" ry="24"/><ellipse cx="615" cy="230" rx="96" ry="24"/><ellipse cx="615" cy="285" rx="96" ry="24"/><ellipse cx="615" cy="340" rx="96" ry="24"/><ellipse cx="615" cy="395" rx="96" ry="24"/>
+          <ellipse cx="385" cy="485" rx="96" ry="24"/><ellipse cx="615" cy="485" rx="96" ry="24"/><ellipse cx="500" cy="565" rx="96" ry="24"/>
+        </g>
+        <g fill="#0c3b32" font-size="12" font-weight="700" text-anchor="middle">
+          <text x="385" y="124">Register/Login</text><text x="385" y="179">Manage Profile</text><text x="385" y="234">Browse Projects</text><text x="385" y="289">Apply Project</text><text x="385" y="344">Verify Skill</text><text x="385" y="399">Submit Work</text>
+          <text x="615" y="124">Post Project</text><text x="615" y="179">View Applicants</text><text x="615" y="234">Fund Escrow</text><text x="615" y="289">Hire Freelancer</text><text x="615" y="344">Review Work</text><text x="615" y="399">Admin Review</text>
+          <text x="385" y="489">Open Dispute</text><text x="615" y="489">Read Notifications</text><text x="500" y="569">Logout</text>
+        </g>
+        <g stroke="#0c3b32" stroke-width="2" fill="none">
+          <circle cx="95" cy="230" r="16"/><line x1="95" y1="246" x2="95" y2="310"/><line x1="55" y1="270" x2="135" y2="270"/><line x1="95" y1="310" x2="60" y2="365"/><line x1="95" y1="310" x2="130" y2="365"/>
+          <circle cx="905" cy="230" r="16"/><line x1="905" y1="246" x2="905" y2="310"/><line x1="865" y1="270" x2="945" y2="270"/><line x1="905" y1="310" x2="870" y2="365"/><line x1="905" y1="310" x2="940" y2="365"/>
+          <circle cx="905" cy="480" r="16"/><line x1="905" y1="496" x2="905" y2="560"/><line x1="865" y1="520" x2="945" y2="520"/><line x1="905" y1="560" x2="870" y2="615"/><line x1="905" y1="560" x2="940" y2="615"/>
+        </g>
+        <g fill="#0c3b32" font-weight="700"><text x="95" y="400" text-anchor="middle">Freelancer</text><text x="905" y="400" text-anchor="middle">Client</text><text x="905" y="650" text-anchor="middle">Admin</text></g>
+        <g stroke="#6b7280" stroke-width="1.1" fill="none">
+          <path d="M135 270 H230 V120 H289"/><path d="M135 270 H230 V175 H289"/><path d="M135 270 H230 V230 H289"/><path d="M135 270 H289"/><path d="M135 270 H230 V340 H289"/><path d="M135 270 H230 V395 H289"/><path d="M135 270 H230 V485 H289"/><path d="M135 270 H230 V565 H404"/>
+          <path d="M865 270 H770 V120 H711"/><path d="M865 270 H770 V175 H711"/><path d="M865 270 H770 V230 H711"/><path d="M865 270 H711"/><path d="M865 270 H770 V340 H711"/><path d="M865 270 H770 V485 H711"/><path d="M865 270 H770 V565 H596"/>
+          <path d="M865 520 H790 V395 H711"/><path d="M865 520 H790 V485 H711"/>
+        </g>
+      </svg>
+    </div>
+    <div class="caption">Fig-2.5.2: Use Case Diagram</div>
+    <p>The Use Case Diagram identifies the complete functional interactions among Freelancer, Client, and Admin. Freelancers register, manage profile, browse projects, apply, verify skills, submit work, message clients, receive payment, open disputes, and read notifications. Clients post projects, view applicants, shortlist, fund escrow, hire freelancers, review work, request revisions, approve payment, open disputes, and read notifications. Administrators manage users, review skill verification, confirm manual escrow, and resolve disputes.</p>
+    </div>
+
+    <div class="figure-block">
+    <h4>2.5.3 Class Diagram</h4>
+    <div class="fig">
+      <svg class="diagram" viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg">
+        <g fill="#b7e0e7" stroke="#1f2937" stroke-width="1.2">
+          <rect x="40" y="40" width="170" height="155"/><rect x="300" y="40" width="185" height="170"/><rect x="610" y="40" width="185" height="170"/>
+          <rect x="40" y="390" width="170" height="165"/><rect x="310" y="395" width="190" height="170"/><rect x="660" y="390" width="210" height="175"/>
+          <rect x="300" y="250" width="185" height="120"/><rect x="610" y="250" width="185" height="120"/>
+        </g>
+        <g stroke="#1f2937" stroke-width="1"><line x1="40" y1="70" x2="210" y2="70"/><line x1="40" y1="135" x2="210" y2="135"/><line x1="300" y1="70" x2="485" y2="70"/><line x1="300" y1="145" x2="485" y2="145"/><line x1="610" y1="70" x2="795" y2="70"/><line x1="610" y1="145" x2="795" y2="145"/><line x1="40" y1="420" x2="210" y2="420"/><line x1="40" y1="485" x2="210" y2="485"/><line x1="310" y1="425" x2="500" y2="425"/><line x1="310" y1="500" x2="500" y2="500"/><line x1="660" y1="420" x2="870" y2="420"/><line x1="660" y1="500" x2="870" y2="500"/><line x1="300" y1="280" x2="485" y2="280"/><line x1="300" y1="325" x2="485" y2="325"/><line x1="610" y1="280" x2="795" y2="280"/><line x1="610" y1="325" x2="795" y2="325"/></g>
+        <g fill="#111827" font-size="12">
+          <text x="125" y="60" text-anchor="middle" font-weight="700">User</text><text x="50" y="88">- userID: int</text><text x="50" y="105">- name: String</text><text x="50" y="122">- email/mobile: String</text><text x="50" y="153">+ register()</text><text x="50" y="170">+ login()</text><text x="50" y="187">+ logout()</text>
+          <text x="392" y="60" text-anchor="middle" font-weight="700">Project</text><text x="310" y="88">- projectID: int</text><text x="310" y="105">- title: String</text><text x="310" y="122">- budget: float</text><text x="310" y="139">- deadline: Date</text><text x="310" y="163">+ createProject()</text><text x="310" y="180">+ updateStatus()</text><text x="310" y="197">+ listProjects()</text>
+          <text x="702" y="60" text-anchor="middle" font-weight="700">Application</text><text x="620" y="88">- applicationID: int</text><text x="620" y="105">- coverLetter: text</text><text x="620" y="122">- status: String</text><text x="620" y="139">- proposedBudget</text><text x="620" y="163">+ apply()</text><text x="620" y="180">+ shortlist()</text><text x="620" y="197">+ hire()</text>
+          <text x="125" y="410" text-anchor="middle" font-weight="700">Profile</text><text x="50" y="438">- skills: JSON</text><text x="50" y="455">- bio: text</text><text x="50" y="472">- avatarURL: String</text><text x="50" y="505">+ updateProfile()</text><text x="50" y="522">+ uploadAvatar()</text><text x="50" y="539">+ profileCompletion()</text>
+          <text x="405" y="415" text-anchor="middle" font-weight="700">SkillVerification</text><text x="320" y="443">- verificationID: int</text><text x="320" y="460">- skillName: String</text><text x="320" y="477">- aiScore: int</text><text x="320" y="494">- status: String</text><text x="320" y="518">+ uploadVideo()</text><text x="320" y="535">+ analyze()</text><text x="320" y="552">+ review()</text>
+          <text x="765" y="410" text-anchor="middle" font-weight="700">Dashboard</text><text x="675" y="438">- totalProjects: int</text><text x="675" y="455">- unreadNotifications</text><text x="675" y="472">- profileCompletion</text><text x="675" y="489">- paymentSummary</text><text x="675" y="518">+ display()</text><text x="675" y="535">+ filterByRole()</text><text x="675" y="552">+ generateStats()</text>
+          <text x="392" y="270" text-anchor="middle" font-weight="700">Escrow</text><text x="310" y="298">- amount: float</text><text x="310" y="315">- provider: String</text><text x="310" y="343">+ fund()</text><text x="310" y="360">+ release()</text>
+          <text x="702" y="270" text-anchor="middle" font-weight="700">Conversation</text><text x="620" y="298">- conversationID: int</text><text x="620" y="315">- lastMessage: text</text><text x="620" y="343">+ sendMessage()</text><text x="620" y="360">+ markRead()</text>
+        </g>
+        <g stroke="#111827" stroke-width="1.4" fill="none">
+          <path d="M210 110 H300"/><text x="225" y="98">1</text><text x="270" y="128">1..*</text>
+          <path d="M485 110 H610"/><text x="500" y="98">1</text><text x="575" y="128">0..*</text>
+          <path d="M125 195 V390"/><text x="135" y="220">1</text><text x="135" y="375">1</text>
+          <path d="M392 210 V250"/><text x="402" y="235">1</text>
+          <path d="M485 315 H610"/><text x="500" y="302">1</text><text x="575" y="335">1..*</text>
+          <path d="M405 395 V382 H545 V210 H485"/><text x="415" y="385">0..*</text><text x="530" y="230">1</text>
+          <path d="M795 145 H925 V478 H870"/><text x="805" y="132">1..*</text><text x="880" y="468">1</text>
+          <path d="M210 480 H275 V610 H660 V520"/><text x="225" y="468">1</text><text x="620" y="600">1</text>
+        </g>
+      </svg>
+    </div>
+    <div class="caption">Fig-2.5.3: Class Diagram</div>
+    <p>The Class Diagram shows the object-oriented structure of SkillShurokkha with class attributes, methods, and multiplicity. A User owns one Profile and can create many Projects as a client or many Applications as a freelancer. Project connects to Application, Escrow, Conversation, and Dashboard data. SkillVerification stores AI score and review status for freelancer skills.</p>
+    </div>
+
+    <div class="figure-block">
+    <h4>2.5.4 Activity Diagram</h4>
+    <div class="fig">
+      <svg class="diagram" viewBox="0 0 900 700" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="actArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#374151"/></marker></defs>
+        <rect x="0" y="0" width="900" height="700" fill="#f3f4f6"/>
+        <g fill="#a7d4f4" stroke="#374151" stroke-width="1.3">
+          <circle cx="450" cy="35" r="14" fill="#111"/><rect x="360" y="65" width="180" height="30" rx="6"/><rect x="350" y="115" width="200" height="32" rx="6"/><rect x="350" y="165" width="200" height="32" rx="6"/><polygon points="450,225 525,270 450,315 375,270"/>
+          <rect x="80" y="350" width="180" height="36" rx="6"/><rect x="80" y="420" width="180" height="36" rx="6"/><rect x="80" y="490" width="180" height="36" rx="6"/>
+          <rect x="360" y="350" width="180" height="36" rx="6"/><rect x="330" y="420" width="240" height="42" rx="6"/><polygon points="450,500 520,540 450,580 380,540"/><rect x="300" y="600" width="180" height="36" rx="6"/><rect x="570" y="600" width="180" height="36" rx="6"/>
+          <rect x="660" y="350" width="180" height="36" rx="6"/><rect x="650" y="420" width="200" height="42" rx="6"/>
+          <rect x="355" y="650" width="190" height="36" rx="6"/><circle cx="760" cy="668" r="16" fill="#fff"/><circle cx="760" cy="668" r="11" fill="#111"/>
+        </g>
+        <g fill="#0f172a" font-size="12" font-weight="600" text-anchor="middle"><text x="450" y="84">Start</text><text x="450" y="136">Login / Register</text><text x="450" y="186">View Dashboard</text><text x="450" y="274">Choose Action?</text><text x="170" y="373">Freelancer Action</text><text x="170" y="443">Verify / Apply / Submit</text><text x="170" y="513">Save Freelancer Data</text><text x="450" y="373">Client Action</text><text x="450" y="444">Post / Fund / Hire / Review</text><text x="450" y="544">Input Valid?</text><text x="390" y="623">Highlight Errors</text><text x="660" y="623">Save Project Data</text><text x="750" y="373">Admin Action</text><text x="750" y="444">Review Skill / Dispute</text><text x="450" y="673">Refresh Dashboard</text></g>
+        <g stroke="#374151" stroke-width="1.5" fill="none" marker-end="url(#actArrow)">
+          <line x1="450" y1="49" x2="450" y2="65"/><line x1="450" y1="95" x2="450" y2="115"/><line x1="450" y1="147" x2="450" y2="165"/><line x1="450" y1="197" x2="450" y2="225"/>
+          <path d="M375 270 H170 V350"/><path d="M450 315 V350"/><path d="M525 270 H750 V350"/>
+          <line x1="170" y1="386" x2="170" y2="420"/><line x1="170" y1="456" x2="170" y2="490"/><path d="M170 526 V668 H355"/>
+          <line x1="450" y1="386" x2="450" y2="420"/><line x1="450" y1="462" x2="450" y2="500"/><path d="M380 540 H390 V600"/><path d="M520 540 H660 V600"/><path d="M390 636 V668 H355"/><path d="M660 636 V668 H545"/>
+          <line x1="750" y1="386" x2="750" y2="420"/><path d="M750 462 V668 H545"/>
+          <path d="M545 668 H744"/>
+        </g>
+        <g fill="#111" font-size="11"><text x="287" y="260">Freelancer</text><text x="462" y="340">Client</text><text x="640" y="260">Admin</text><text x="530" y="530">True</text><text x="340" y="530">False</text></g>
+      </svg>
+    </div>
+    <div class="caption">Fig-2.5.4: Activity Diagram</div>
+    <p>The Activity Diagram shows the complete role based workflow. After login, the user views the dashboard and chooses a role-specific action. Freelancers verify skills, apply to projects, or submit work. Clients post projects, fund escrow, hire freelancers, or review submissions. Administrators review skill results and disputes. Invalid input returns to error handling, while valid actions update project, escrow, notification, and dashboard data.</p>
+    </div>
+
+    <div class="figure-block">
+    <h4>2.5.5 Sequence Diagram</h4>
+    <div class="fig">
+      <svg class="diagram" viewBox="0 0 1000 760" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="seqArr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#111827"/></marker></defs>
+        <rect x="0" y="0" width="1000" height="760" fill="#f3f4f6"/>
+        <g fill="#e6f4df" stroke="#1f2937"><rect x="45" y="25" width="120" height="42"/><rect x="245" y="25" width="120" height="42" fill="#d6eaf8"/><rect x="445" y="25" width="130" height="42" fill="#e9daf4"/><rect x="660" y="25" width="120" height="42" fill="#ffd9ad"/><rect x="840" y="25" width="120" height="42" fill="#d1fae5"/></g>
+        <g fill="#111827" font-size="12" font-weight="700" text-anchor="middle"><text x="105" y="51">User</text><text x="305" y="51">Browser UI</text><text x="510" y="51">Backend API</text><text x="720" y="51">Database</text><text x="900" y="51">Services</text></g>
+        <g stroke="#6b7280" stroke-dasharray="6 5"><line x1="105" y1="67" x2="105" y2="720"/><line x1="305" y1="67" x2="305" y2="720"/><line x1="510" y1="67" x2="510" y2="720"/><line x1="720" y1="67" x2="720" y2="720"/><line x1="900" y1="67" x2="900" y2="720"/></g>
+        <g fill="#fff" stroke="#111827"><rect x="98" y="95" width="14" height="560"/><rect x="298" y="120" width="14" height="535"/><rect x="503" y="145" width="14" height="510"/><rect x="713" y="170" width="14" height="485"/><rect x="893" y="250" width="14" height="405"/></g>
+        <g stroke="#111827" stroke-width="1.3" marker-end="url(#seqArr)">
+          <line x1="112" y1="105" x2="298" y2="105"/><line x1="298" y1="130" x2="112" y2="130"/>
+          <line x1="112" y1="155" x2="298" y2="155"/><line x1="312" y1="180" x2="503" y2="180"/><line x1="517" y1="205" x2="713" y2="205"/><line x1="713" y1="230" x2="517" y2="230" stroke-dasharray="5 4"/><line x1="503" y1="255" x2="312" y2="255" stroke-dasharray="5 4"/><line x1="298" y1="280" x2="112" y2="280" stroke-dasharray="5 4"/>
+          <line x1="112" y1="320" x2="298" y2="320"/><line x1="298" y1="345" x2="112" y2="345"/><line x1="112" y1="370" x2="298" y2="370"/><line x1="312" y1="395" x2="503" y2="395"/><line x1="517" y1="420" x2="713" y2="420"/><line x1="713" y1="445" x2="517" y2="445" stroke-dasharray="5 4"/><line x1="517" y1="470" x2="893" y2="470"/><line x1="893" y1="495" x2="517" y2="495" stroke-dasharray="5 4"/><line x1="503" y1="520" x2="312" y2="520" stroke-dasharray="5 4"/>
+          <line x1="112" y1="560" x2="298" y2="560"/><line x1="312" y1="585" x2="503" y2="585"/><line x1="517" y1="610" x2="713" y2="610"/><line x1="517" y1="635" x2="893" y2="635"/><line x1="893" y1="660" x2="517" y2="660" stroke-dasharray="5 4"/><line x1="503" y1="685" x2="312" y2="685" stroke-dasharray="5 4"/><line x1="298" y1="710" x2="112" y2="710" stroke-dasharray="5 4"/>
+        </g>
+        <g fill="#111827" font-size="10">
+          <text x="125" y="98">1: Open App</text><text x="125" y="123">2: Show Landing Page</text><text x="125" y="148">3: Enter Credentials &amp; Submit</text><text x="335" y="173">4: POST /auth/login</text><text x="540" y="198">5: Validate User</text><text x="560" y="223">6: User Record</text><text x="335" y="248">7: Auth Success + Token</text><text x="125" y="273">8: Show Role Dashboard</text>
+          <text x="125" y="313">9: Click Project/Verify/Payment</text><text x="125" y="338">10: Show Form</text><text x="125" y="363">11: Fill &amp; Submit Form</text><text x="335" y="388">12: POST Workflow API</text><text x="540" y="413">13: INSERT/UPDATE Record</text><text x="555" y="438">14: Success(ID)</text><text x="610" y="463">15: Emit notification / payment / AI job</text><text x="610" y="488">16: Service Result</text><text x="335" y="513">17: 200 OK + Updated Data</text>
+          <text x="125" y="553">18: Admin Review / Client Approval</text><text x="335" y="578">19: PATCH Review/Approve</text><text x="540" y="603">20: Update Status</text><text x="610" y="628">21: Notify Recipient</text><text x="610" y="653">22: Notification Sent</text><text x="335" y="678">23: Updated Response</text><text x="125" y="703">24: Refresh Dashboard &amp; Badges</text>
+        </g>
+      </svg>
+    </div>
+    <div class="caption">Fig-2.5.5: Sequence Diagram</div>
+    <p>The Sequence Diagram illustrates the end-to-end interaction flow. A user logs in through the browser UI, the backend validates credentials using the database, and the role based dashboard is displayed. For project, skill verification, payment, and review workflows, the browser sends API requests to the backend, records are updated in the database, external services such as AI, payment, and notifications are triggered, and the dashboard refreshes with updated data.</p>
+    </div>
+
+    <div class="figure-block">
+    <h4>2.5.6 Entity Relationship Diagram</h4>
+    <div class="fig">
+      <svg class="diagram" viewBox="0 0 1000 720" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="1000" height="720" fill="#f3f4f6"/>
+        <rect x="55" y="45" width="890" height="625" fill="#fff" stroke="#555" stroke-width="2"/>
+        <g stroke="#24735c" stroke-width="1.5" fill="#a7d46f">
+          <rect x="100" y="150" width="140" height="64" rx="4"/><rect x="430" y="150" width="140" height="64" rx="4"/><rect x="760" y="150" width="150" height="64" rx="4"/>
+          <rect x="90" y="470" width="160" height="64" rx="4"/><rect x="420" y="470" width="160" height="64" rx="4"/><rect x="760" y="470" width="150" height="64" rx="4"/>
+        </g>
+        <g stroke="#3f9b80" stroke-width="1.3" fill="#d9f3eb">
+          <ellipse cx="95" cy="80" rx="45" ry="20"/><ellipse cx="170" cy="70" rx="42" ry="20"/><ellipse cx="255" cy="80" rx="55" ry="20"/>
+          <ellipse cx="420" cy="80" rx="50" ry="20"/><ellipse cx="500" cy="70" rx="42" ry="20"/><ellipse cx="590" cy="80" rx="50" ry="20"/>
+          <ellipse cx="750" cy="80" rx="58" ry="20"/><ellipse cx="850" cy="70" rx="55" ry="20"/><ellipse cx="925" cy="100" rx="42" ry="20"/>
+          <ellipse cx="70" cy="420" rx="58" ry="20"/><ellipse cx="160" cy="610" rx="50" ry="20"/><ellipse cx="265" cy="600" rx="45" ry="20"/>
+          <ellipse cx="395" cy="610" rx="58" ry="20"/><ellipse cx="500" cy="630" rx="45" ry="20"/><ellipse cx="610" cy="610" rx="55" ry="20"/>
+          <ellipse cx="760" cy="420" rx="45" ry="20"/><ellipse cx="910" cy="420" rx="45" ry="20"/><ellipse cx="925" cy="600" rx="60" ry="20"/>
+        </g>
+        <g stroke="#c76b00" stroke-width="1.3" fill="#ffb056">
+          <polygon points="335,147 370,182 335,217 300,182"/><polygon points="665,147 700,182 665,217 630,182"/>
+          <polygon points="170,300 205,335 170,370 135,335"/><polygon points="500,300 535,335 500,370 465,335"/><polygon points="835,300 870,335 835,370 800,335"/>
+        </g>
+        <g fill="#0f172a" font-size="12" font-weight="400" text-anchor="middle">
+          <text x="170" y="187">User</text><text x="500" y="187">Project</text><text x="835" y="187">Application</text><text x="170" y="507">SkillVerification</text><text x="500" y="507">Escrow</text><text x="835" y="507">Conversation</text>
+          <text x="95" y="84">user_id</text><text x="170" y="74">name</text><text x="255" y="84">email/mobile</text>
+          <text x="420" y="84">project_id</text><text x="500" y="74">budget</text><text x="590" y="84">deadline</text>
+          <text x="750" y="84">application_id</text><text x="850" y="74">freelancer_id</text><text x="925" y="104">status</text>
+          <text x="70" y="424">verification_id</text><text x="160" y="614">skill_name</text><text x="265" y="604">ai_score</text>
+          <text x="395" y="614">escrow_id</text><text x="500" y="634">amount</text><text x="610" y="614">provider</text>
+          <text x="760" y="424">conversation_id</text><text x="910" y="424">project_id</text><text x="925" y="604">last_message</text>
+          <text x="335" y="186">Creates</text><text x="665" y="186">Has</text><text x="170" y="339">Verifies</text><text x="500" y="339">Funds</text><text x="835" y="339">Chats</text>
+        </g>
+        <g stroke="#444" stroke-width="1.3" fill="none">
+          <line x1="120" y1="95" x2="130" y2="150"/><line x1="170" y1="90" x2="170" y2="150"/><line x1="245" y1="98" x2="210" y2="150"/>
+          <line x1="440" y1="98" x2="455" y2="150"/><line x1="500" y1="90" x2="500" y2="150"/><line x1="580" y1="98" x2="535" y2="150"/>
+          <line x1="770" y1="98" x2="790" y2="150"/><line x1="850" y1="90" x2="850" y2="150"/><line x1="915" y1="118" x2="890" y2="150"/>
+          <line x1="105" y1="425" x2="125" y2="470"/><line x1="160" y1="590" x2="160" y2="534"/><line x1="255" y1="585" x2="210" y2="534"/>
+          <line x1="405" y1="590" x2="455" y2="534"/><line x1="500" y1="610" x2="500" y2="534"/><line x1="600" y1="590" x2="535" y2="534"/>
+          <line x1="785" y1="425" x2="800" y2="470"/><line x1="895" y1="425" x2="875" y2="470"/><line x1="910" y1="585" x2="875" y2="534"/>
+          <line x1="240" y1="182" x2="300" y2="182"/><line x1="370" y1="182" x2="430" y2="182"/>
+          <line x1="570" y1="182" x2="630" y2="182"/><line x1="700" y1="182" x2="760" y2="182"/>
+          <line x1="170" y1="214" x2="170" y2="300"/><line x1="170" y1="370" x2="170" y2="470"/>
+          <line x1="500" y1="214" x2="500" y2="300"/><line x1="500" y1="370" x2="500" y2="470"/>
+          <line x1="835" y1="214" x2="835" y2="300"/><line x1="835" y1="370" x2="835" y2="470"/>
+        </g>
+        <g fill="#e11d48" font-size="13" font-weight="400">
+          <text x="270" y="172">1</text><text x="400" y="172">N</text><text x="600" y="172">1</text><text x="730" y="172">N</text>
+          <text x="180" y="275">1</text><text x="180" y="445">N</text><text x="510" y="275">1</text><text x="510" y="445">1</text><text x="845" y="275">1</text><text x="845" y="445">N</text>
+        </g>
+      </svg>
+    </div>
+    <div class="caption" style="font-weight:400">Fig-2.5.6: ER Diagram</div>
+    <p>The ER Diagram models the complete data structure of SkillShurokkha using entity boxes, relationship diamonds, attributes, and cardinality. User creates Project, submits Application, and verifies SkillVerification records. Project is connected with Application, Escrow, and Conversation. Escrow stores secured payment data, and Conversation stores project based messaging.</p>
+    </div>
+
+    <h3>2.6 Constraints</h3>
+    <ul>
+      <li>The system requires internet connectivity for most operations.</li>
+      <li>Skill verification quality depends on video clarity, audio, and AI service availability.</li>
+      <li>Payment release depends on escrow status and client approval.</li>
+      <li>Manual payment providers require administrator confirmation before hiring can proceed.</li>
+      <li>The system assumes one active account role per user.</li>
+      <li>Only modern browsers are supported for the web interface.</li>
+    </ul>
+  </section>
+
+  <section class="page-break">
+    <h2>3. External Interface Requirements</h2>
+    <h3>3.1 User Interface Requirements</h3>
+    <p>The interface shall be simple, responsive, and role based. The left sidebar shall contain navigation items according to the logged in role. Admin users shall see dashboard, notifications, and settings. Clients shall see dashboard, projects, applicants, payments, messages, notifications, and settings. Freelancers shall see dashboard, projects, verification, payments, messages, notifications, and settings. Buttons, forms, badges, and alert messages shall be clear and consistent across pages.</p>
+
+    <h3>3.2 Hardware Interface Requirements</h3>
+    <ul>
+      <li>Desktop, laptop, tablet, and smartphone devices shall be supported.</li>
+      <li>Camera and microphone shall be required for skill video recording or uploading.</li>
+      <li>Stable internet connection through Wi-Fi, broadband, 3G, 4G, or 5G shall be required.</li>
+      <li>No special hardware shall be required for normal project browsing and messaging.</li>
+    </ul>
+
+    <h3>3.3 Software Interface Requirements</h3>
+    <table>
+      <tr><th>Component</th><th>Requirement</th></tr>
+      <tr><td>Frontend</td><td>Next.js, React, Tailwind CSS, Socket.IO client</td></tr>
+      <tr><td>Backend</td><td>Node.js, Express.js, REST API, Socket.IO</td></tr>
+      <tr><td>Database</td><td>Relational database with users, projects, applications, escrows, messages, notifications, and skill verification tables</td></tr>
+      <tr><td>AI Service</td><td>Video metadata analysis, transcription, scoring, and skill authenticity review workflow</td></tr>
+      <tr><td>Payment</td><td>bKash, Nagad, bank transfer, manual review, or development gateway provider integration</td></tr>
+    </table>
+
+    <h3>3.4 Communication Interface Requirements</h3>
+    <ul>
+      <li>The system shall use HTTPS in production for secure data transfer.</li>
+      <li>The frontend shall communicate with backend REST APIs using JSON and multipart form data where needed.</li>
+      <li>Real time messages and notification updates shall use WebSocket communication through Socket.IO.</li>
+      <li>Payment gateways shall communicate through redirect callbacks and webhook endpoints.</li>
+      <li>Users shall receive in-app notifications for applications, hiring, messages, payment release, disputes, and skill verification events.</li>
+    </ul>
+  </section>
+
+  <section class="page-break">
+    <h2>4. Non-functional Requirements</h2>
+    <h3>4.1 Security</h3>
+    <p>The system shall protect user accounts through secure authentication and authorization. Passwords shall be stored using hashing. Role based access control shall prevent unauthorized users from accessing admin, client, or freelancer actions. Payment and escrow workflows shall prevent direct payment release without proper approval. Sensitive data shall be transferred through HTTPS in production.</p>
+
+    <h3>4.2 Capacity</h3>
+    <p>The initial system shall support at least 50,000 users and allow future expansion. Video files, proposal documents, avatars, messages, and project records shall be stored in scalable storage. The database shall support indexing for notifications, projects, users, and conversations to keep common pages responsive.</p>
+
+    <h3>4.3 Compatibility</h3>
+    <p>The web application shall be compatible with modern browsers such as Chrome, Edge, Firefox, and Safari. The interface shall support desktop and mobile screen sizes. The system shall work on Windows, Linux, Android, and iOS through browser access.</p>
+
+    <h3>4.4 Reliability</h3>
+    <p>The system shall target 99% uptime under normal project usage. Important workflows such as escrow funding, hiring, dispute creation, and payment release shall use database transactions to reduce inconsistent states. User data shall not be lost after page refresh, logout, or temporary network interruption.</p>
+
+    <h3>4.5 Scalability</h3>
+    <p>The system shall be designed so backend services, database, file storage, and AI analysis can be scaled independently. Notification, messaging, and AI analysis processes shall support future workload growth. The architecture shall allow additional payment providers and verification models to be added later.</p>
+
+    <h3>4.6 Maintainability</h3>
+    <p>The system shall use modular backend routes and services. Project, payment, notification, message, and skill verification logic shall be separated into maintainable modules. Bug fixes and features shall be tested and deployed through a controlled development workflow.</p>
+
+    <h3>4.7 Usability</h3>
+    <p>The system shall be easy to use for non-technical freelancers and clients. Navigation shall be visible, actions shall use clear labels, and important statuses shall be shown through badges and notifications. Bangla and English language support shall improve accessibility for Bangladeshi users.</p>
+
+    <h3>4.8 Other Non-functional Requirements</h3>
+    <ul>
+      <li>The system shall respond quickly to common dashboard and project actions.</li>
+      <li>Uploaded files shall be validated by type and size.</li>
+      <li>Error messages shall be understandable and user friendly.</li>
+      <li>The platform shall be prepared for local payment and data compliance requirements.</li>
+    </ul>
+  </section>
+
+  <section class="page-break">
+    <h2>5. Definitions and Acronyms</h2>
+    <table>
+      <tr><th>Term</th><th>Definition</th></tr>
+      <tr><td>AI</td><td>Artificial Intelligence, used for skill video analysis and scoring.</td></tr>
+      <tr><td>API</td><td>Application Programming Interface, used for frontend and backend communication.</td></tr>
+      <tr><td>Client</td><td>A user who posts projects and hires freelancers.</td></tr>
+      <tr><td>Freelancer</td><td>A user who verifies skills, applies to projects, and completes work.</td></tr>
+      <tr><td>Admin</td><td>A platform user who reviews skill verification, disputes, payment, and user status.</td></tr>
+      <tr><td>Escrow</td><td>A secure payment holding process where client funds are locked until work approval.</td></tr>
+      <tr><td>OTP</td><td>One-Time Password used for account or contact verification.</td></tr>
+      <tr><td>UI</td><td>User Interface, the screens and controls users interact with.</td></tr>
+      <tr><td>UML</td><td>Unified Modeling Language, used to design system diagrams.</td></tr>
+      <tr><td>SRS</td><td>Software Requirement Specification, a document that describes software requirements.</td></tr>
+      <tr><td>Socket.IO</td><td>A real time communication library used for messages and notification updates.</td></tr>
+      <tr><td>Webhook</td><td>An endpoint called by an external payment provider to notify payment status.</td></tr>
+    </table>
+  </section>
+</body>
+</html>

@@ -8,7 +8,13 @@
     "seed:admin": "node src/scripts/seedAdmin.js",
     "cleanup:test": "node src/scripts/cleanupTestData.js",
     "test:ai-upload": "node src/scripts/testAiUpload.js",
-    "check": "node --check src/server.js && node --check src/routes/auth.js && node --check src/routes/profile.js && node --check src/routes/projects.js && node --check src/routes/admin.js && node --check src/routes/notifications.js && node --check src/routes/skills.js && node --check src/routes/payments.js && node --check src/services/verification.js && node --check src/services/notifications.js && node --check src/services/skillAnalysis.js && node --check src/scripts/seedAdmin.js && node --check src/scripts/cleanupTestData.js && node --check src/scripts/testAiUpload.js"
+    "test:deadline-workflow": "node src/scripts/testDeadlineWorkflow.js",
+    "test:realtime-messages": "node src/scripts/testRealtimeMessages.js",
+    "test:project-evaluation": "node src/scripts/testProjectEvaluation.js",
+    "test:escrow-release": "node src/scripts/testEscrowReleaseWorkflow.js",
+    "test:withdrawal": "node src/scripts/testWithdrawalWorkflow.js",
+    "test:project-thresholds": "node src/scripts/testProjectThresholds.js",
+    "check": "node --check src/server.js && node --check src/routes/auth.js && node --check src/routes/profile.js && node --check src/routes/projects.js && node --check src/routes/dashboard.js && node --check src/routes/admin.js && node --check src/routes/notifications.js && node --check src/routes/messages.js && node --check src/routes/skills.js && node --check src/routes/payments.js && node --check src/services/verification.js && node --check src/services/notifications.js && node --check src/services/messages.js && node --check src/services/realtime.js && node --check src/services/deadlines.js && node --check src/services/paymentProviders.js && node --check src/services/skillAnalysis.js && node --check src/services/projectEvaluation.js && node --check src/services/escrowReleases.js && node --check src/scripts/seedAdmin.js && node --check src/scripts/cleanupTestData.js && node --check src/scripts/testAiUpload.js && node --check src/scripts/testDeadlineWorkflow.js && node --check src/scripts/testRealtimeMessages.js && node --check src/scripts/testProjectEvaluation.js && node --check src/scripts/testEscrowReleaseWorkflow.js && node --check src/scripts/testWithdrawalWorkflow.js && node --check src/scripts/testProjectThresholds.js"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.6",
@@ -20,9 +26,11 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.1.1",
     "mysql2": "^3.14.0",
-    "nodemailer": "^8.0.10"
+    "nodemailer": "^8.0.10",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "socket.io-client": "^4.8.3"
   }
 }

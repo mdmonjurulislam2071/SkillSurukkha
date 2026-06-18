@@ -38,17 +38,29 @@ async function main() {
       body: JSON.stringify({ contact: email, channel: "email", code: registration.devOtp }),
     });
     userId = session.user.id;
+    await request("/profiles/me", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.token}` },
+      body: JSON.stringify({ skills: ["UI/UX Design"] }),
+    });
     const body = new FormData();
     body.append("skillName", "UI/UX Design");
     body.append("taskDescription", "Explain a transaction history screen design.");
     body.append("video", new Blob([await fs.readFile(temporaryVideo)], { type: "video/mp4" }), "sample.mp4");
     const upload = await request("/skills/upload", { method: "POST", headers: { Authorization: `Bearer ${session.token}` }, body });
-    await new Promise((resolve) => setTimeout(resolve, 2500));
-    const mine = await request("/skills/mine", { headers: { Authorization: `Bearer ${session.token}` } });
-    const verification = mine.verifications.find((item) => item.id === upload.verificationId);
+    let verification;
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const mine = await request("/skills/mine", { headers: { Authorization: `Bearer ${session.token}` } });
+      verification = mine.verifications.find((item) => item.id === upload.verificationId);
+      if (!["pending", "processing"].includes(verification.status)) break;
+    }
     console.log(JSON.stringify({ verificationId: verification.id, status: verification.status, analysisError: verification.analysis_error }));
     if (!process.env.HF_TOKEN && (verification.status !== "failed" || verification.analysis_error !== "HF_TOKEN is not configured.")) {
       throw new Error("Expected a clear missing HF_TOKEN failure.");
+    }
+    if (process.env.HF_TOKEN && verification.status !== "review_ready") {
+      throw new Error(verification.analysis_error || `Expected review_ready status, received ${verification.status}.`);
     }
   } finally {
     if (userId) {

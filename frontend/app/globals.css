@@ -49,3 +49,42 @@ textarea {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.message-route {
+  display: flex;
+  height: calc(100vh - 136px);
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.message-route > .grid {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.min-h-\[68vh\].rounded-\[24px\] {
+  min-height: 0;
+}
+
+.min-h-\[68vh\].rounded-\[24px\] aside {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.min-h-\[68vh\].rounded-\[24px\] section {
+  min-height: 0;
+}
+
+.min-h-\[68vh\].rounded-\[24px\] section > div.flex-1 {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+@media (max-height: 760px) {
+  .message-route {
+    height: calc(100vh - 118px);
+  }
+}
