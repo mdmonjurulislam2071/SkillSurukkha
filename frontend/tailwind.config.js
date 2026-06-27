@@ -9,7 +9,7 @@ module.exports = {
         mint: "#a7f3d0",
         leaf: "#10b981",
         sun: "#fbbf24",
-        cloud: "#f5faf7",
+        cloud: "#f6f8f4",
       },
       boxShadow: {
         glow: "0 18px 55px rgba(16, 185, 129, .22)",

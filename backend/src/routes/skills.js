@@ -22,6 +22,12 @@ async function freelancerHasSkill(freelancerId, skillName) {
   return skills.some((skill) => String(skill).trim().toLowerCase() === skillName.trim().toLowerCase());
 }
 
+async function freelancerSkillSet(freelancerId) {
+  const [rows] = await pool.query(`SELECT skills FROM profiles WHERE user_id = ?`, [freelancerId]);
+  const skills = typeof rows[0]?.skills === "string" ? JSON.parse(rows[0].skills) : rows[0]?.skills || [];
+  return new Set((Array.isArray(skills) ? skills : []).map((skill) => String(skill).trim().toLowerCase()).filter(Boolean));
+}
+
 const questionBank = {
   frontend: [
     "Explain how you make a React component reusable and easy to maintain.",
@@ -38,6 +44,14 @@ const questionBank = {
     "Explain how you handle errors in an Express or Node.js API.",
     "How do you prevent duplicate records and race-condition bugs?",
     "What steps would you take to debug a slow database query?",
+  ],
+  python: [
+    "Explain how you structure a Python project so the code is easy to maintain.",
+    "How do you handle errors and exceptions in a Python program?",
+    "Explain how you read, validate and process data from a file or API in Python.",
+    "How do you use virtual environments and dependencies in a Python project?",
+    "What is the difference between a list, tuple, set and dictionary in Python?",
+    "How would you debug a Python script that works locally but fails in production?",
   ],
   design: [
     "Explain how you choose layout, spacing and hierarchy for a screen.",
@@ -59,6 +73,7 @@ const questionBank = {
 
 function categoryForSkill(skillName) {
   const normalized = skillName.toLowerCase();
+  if (/(python|django|flask|fastapi|pandas|numpy|data science|machine learning|automation|script)/.test(normalized)) return "python";
   if (/(react|javascript|frontend|html|css|next|web)/.test(normalized)) return "frontend";
   if (/(node|express|backend|api|mysql|database|php|laravel)/.test(normalized)) return "backend";
   if (/(ui|ux|figma|design|graphic|logo|brand|illustrator|photoshop)/.test(normalized)) return "design";
@@ -67,7 +82,7 @@ function categoryForSkill(skillName) {
 
 function randomQuestionsForSkill(skillName) {
   const category = categoryForSkill(skillName);
-  const pool = [...questionBank[category], ...questionBank.general];
+  const pool = [...new Set([...questionBank[category], ...questionBank.general])];
   return pool
     .map((question) => ({ question, sort: Math.random() }))
     .sort((left, right) => left.sort - right.sort)
@@ -90,7 +105,8 @@ function badgeTier(score) {
 router.get("/mine", authenticate, allowRoles("freelancer"), async (req, res, next) => {
   try {
     const [verifications] = await pool.query(`SELECT * FROM skill_verifications WHERE freelancer_id = ? ORDER BY created_at DESC`, [req.user.id]);
-    res.json({ verifications });
+    const currentSkills = await freelancerSkillSet(req.user.id);
+    res.json({ verifications: verifications.filter((item) => currentSkills.has(String(item.skill_name || "").trim().toLowerCase())) });
   } catch (error) { next(error); }
 });
 
@@ -196,7 +212,8 @@ router.post("/:id/analyze", authenticate, allowRoles("admin"), async (req, res, 
 router.get("/badges/:freelancerId", async (req, res, next) => {
   try {
     const [badges] = await pool.query(`SELECT id, skill_name, ai_score, badge_reference, reviewed_at FROM skill_verifications WHERE freelancer_id = ? AND status = 'verified' ORDER BY reviewed_at DESC`, [req.params.freelancerId]);
-    res.json({ badges: badges.map((badge) => ({ ...badge, badge_tier: badgeTier(badge.ai_score), badge_label: badge.badge_reference || badgeName(badge.skill_name, badge.ai_score) })) });
+    const currentSkills = await freelancerSkillSet(req.params.freelancerId);
+    res.json({ badges: badges.filter((badge) => currentSkills.has(String(badge.skill_name || "").trim().toLowerCase())).map((badge) => ({ ...badge, badge_tier: badgeTier(badge.ai_score), badge_label: badge.badge_reference || badgeName(badge.skill_name, badge.ai_score) })) });
   } catch (error) { next(error); }
 });
 

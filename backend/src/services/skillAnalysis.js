@@ -1,4 +1,5 @@
 const fs = require("fs/promises");
+const fsSync = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
 const { promisify } = require("util");
@@ -8,6 +9,15 @@ const notify = require("./notifications");
 const run = promisify(execFile);
 const ffmpeg = () => process.env.FFMPEG_PATH || "ffmpeg";
 const ffprobe = () => process.env.FFPROBE_PATH || "ffprobe";
+const whisperCommand = () => {
+  if (process.env.WHISPER_COMMAND) return process.env.WHISPER_COMMAND;
+  const localAppData = process.env.LOCALAPPDATA;
+  const windowsWhisper = localAppData ? path.join(localAppData, "Programs", "Python", "Python311", "Scripts", "whisper.exe") : null;
+  return windowsWhisper && fsSync.existsSync(windowsWhisper) ? windowsWhisper : "whisper";
+};
+const whisperCommandArgs = () => String(process.env.WHISPER_COMMAND_ARGS || "").split(/\s+/).filter(Boolean);
+const whisperModel = () => process.env.WHISPER_MODEL || "base";
+const whisperModelDir = () => process.env.WHISPER_MODEL_DIR || (process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, "WhisperModels") : null);
 
 function badgeName(skillName, score) {
   if (Number(score) >= 85) return `${skillName} Elite Expert`;
@@ -24,12 +34,25 @@ async function toolAvailable(command) {
   }
 }
 
+async function commandAvailable(command, args = ["--help"]) {
+  try {
+    await run(command, args, { windowsHide: true, maxBuffer: 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: "utf-8" } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function getPipelineHealth() {
   return {
     ffmpeg: await toolAvailable(ffmpeg()),
     ffprobe: await toolAvailable(ffprobe()),
     huggingFaceToken: Boolean(process.env.HF_TOKEN),
     asrModel: process.env.HF_ASR_MODEL || "openai/whisper-large-v3",
+    transcriptionProviders: transcriptionProviders(),
+    localWhisper: await commandAvailable(whisperCommand(), [...whisperCommandArgs(), "--help"]),
+    localWhisperModel: whisperModel(),
+    localWhisperModelDir: whisperModelDir(),
   };
 }
 
@@ -49,7 +72,7 @@ async function probeMedia(videoPath) {
   };
 }
 
-async function transcribe(videoPath) {
+async function transcribeWithHuggingFace(videoPath) {
   if (!process.env.HF_TOKEN) throw new Error("HF_TOKEN is not configured.");
   const audioPath = `${videoPath}.wav`;
   try {
@@ -66,6 +89,59 @@ async function transcribe(videoPath) {
   } finally {
     await fs.rm(audioPath, { force: true });
   }
+}
+
+async function transcribeWithLocalWhisper(videoPath) {
+  const audioPath = `${videoPath}.wav`;
+  const outputDir = await fs.mkdtemp(path.join(path.dirname(videoPath), "whisper-"));
+  try {
+    await run(ffmpeg(), ["-y", "-i", videoPath, "-vn", "-ac", "1", "-ar", "16000", "-f", "wav", audioPath], { windowsHide: true, maxBuffer: 2 * 1024 * 1024 });
+    const args = [
+      ...whisperCommandArgs(),
+      audioPath,
+      "--model", whisperModel(),
+      "--output_format", "txt",
+      "--output_dir", outputDir,
+      "--fp16", "False",
+    ];
+    if (whisperModelDir()) args.push("--model_dir", whisperModelDir());
+    if (process.env.WHISPER_LANGUAGE) args.push("--language", process.env.WHISPER_LANGUAGE);
+    await run(whisperCommand(), args, { windowsHide: true, maxBuffer: 10 * 1024 * 1024, timeout: Number(process.env.WHISPER_TIMEOUT_MS || 10 * 60 * 1000), env: { ...process.env, PYTHONIOENCODING: "utf-8" } });
+    const files = await fs.readdir(outputDir);
+    const transcriptFile = files.find((file) => file.toLowerCase().endsWith(".txt"));
+    if (!transcriptFile) throw new Error("Local Whisper did not create a transcript file.");
+    const transcript = await fs.readFile(path.join(outputDir, transcriptFile), "utf8");
+    return transcript.trim();
+  } finally {
+    await fs.rm(audioPath, { force: true });
+    await fs.rm(outputDir, { recursive: true, force: true });
+  }
+}
+
+function transcriptionProviders() {
+  return String(process.env.SKILL_TRANSCRIPTION_PROVIDERS || "huggingface,local")
+    .split(",")
+    .map((provider) => provider.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+async function transcribe(videoPath) {
+  const errors = [];
+  for (const provider of transcriptionProviders()) {
+    try {
+      if (provider === "huggingface" || provider === "hf") return { transcript: await transcribeWithHuggingFace(videoPath), provider: "huggingface" };
+      if (provider === "local" || provider === "whisper") return { transcript: await transcribeWithLocalWhisper(videoPath), provider: "local-whisper" };
+    } catch (error) {
+      errors.push(`${provider}: ${error.message}`);
+      if (!isTranscriptionProviderError(error) && provider !== "local" && provider !== "whisper") throw error;
+    }
+  }
+  throw new Error(`All speech transcription providers failed. ${errors.join(" | ")}`);
+}
+
+function isTranscriptionProviderError(error) {
+  const message = String(error?.message || "");
+  return /HF_TOKEN|included credits|Inference Providers|quota|rate limit|unauthorized|forbidden|payment|required|subscribe|billing|not recognized|not found|ENOENT|failed|unavailable/i.test(message);
 }
 
 function parseTaskDescription(value) {
@@ -96,7 +172,7 @@ function questionCoverage(taskDescription, transcript) {
   });
 }
 
-function buildEvidence(metadata, transcript, taskDescription) {
+function buildEvidence(metadata, transcript = "", taskDescription) {
   const words = transcript.split(/\s+/).filter(Boolean).length;
   const issues = [];
   const questionResults = questionCoverage(taskDescription, transcript);
@@ -126,6 +202,24 @@ function buildEvidence(metadata, transcript, taskDescription) {
   };
 }
 
+function buildMetadataOnlyEvidence(metadata, taskDescription, error) {
+  const evidence = buildEvidence(metadata, "", taskDescription);
+  return {
+    preliminaryScore: Math.min(evidence.preliminaryScore, 35),
+    report: {
+      ...evidence.report,
+      checkLevel: "metadata_only_transcription_unavailable",
+      requiresHumanReview: true,
+      passed: false,
+      issues: [
+        "Hosted speech transcription is currently unavailable, so this submission needs manual review.",
+        ...evidence.report.issues,
+      ],
+      providerError: String(error?.message || "Transcription provider unavailable.").slice(0, 500),
+    },
+  };
+}
+
 async function analyzeVerification(verificationId) {
   const [rows] = await pool.query(`SELECT * FROM skill_verifications WHERE id = ?`, [verificationId]);
   const verification = rows[0];
@@ -136,8 +230,17 @@ async function analyzeVerification(verificationId) {
     if (!metadata.hasVideo || !metadata.hasAudio || !metadata.durationSeconds || metadata.durationSeconds > 300) {
       throw new Error("Video must contain audio and video streams and be no longer than 5 minutes.");
     }
-    const transcript = await transcribe(path.resolve(verification.video_path));
-    const evidence = buildEvidence(metadata, transcript, verification.task_description);
+    let transcript = "";
+    let evidence;
+    try {
+      const result = await transcribe(path.resolve(verification.video_path));
+      transcript = result.transcript;
+      evidence = buildEvidence(metadata, transcript, verification.task_description);
+      evidence.report.transcriptionProvider = result.provider;
+    } catch (error) {
+      if (!isTranscriptionProviderError(error)) throw error;
+      evidence = buildMetadataOnlyEvidence(metadata, verification.task_description, error);
+    }
     const activationThreshold = Number(process.env.SKILL_ACTIVATION_SCORE || 50);
     const verified = evidence.preliminaryScore >= activationThreshold;
     const badgeReference = verified ? badgeName(verification.skill_name, evidence.preliminaryScore) : null;

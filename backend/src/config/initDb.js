@@ -313,6 +313,25 @@ async function initDb() {
     )
   `);
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS nid_verifications (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      user_id INT UNSIGNED NOT NULL,
+      nid_number VARCHAR(40) NOT NULL,
+      front_image_url VARCHAR(500) NOT NULL,
+      back_image_url VARCHAR(500) NOT NULL,
+      status ENUM('pending','verified','rejected') NOT NULL DEFAULT 'pending',
+      rejection_reason TEXT NULL,
+      reviewed_by INT UNSIGNED NULL,
+      reviewed_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_nid_user_status (user_id, status, created_at),
+      INDEX idx_nid_status (status, created_at),
+      CONSTRAINT fk_nid_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      CONSTRAINT fk_nid_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS conversations (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       project_id INT UNSIGNED NOT NULL,

@@ -44,8 +44,18 @@ async function main() {
       body: JSON.stringify({ skills: ["UI/UX Design"] }),
     });
     const body = new FormData();
+    const questions = [
+      { id: 1, question: "Explain how you choose layout, spacing and hierarchy for a screen." },
+      { id: 2, question: "How would you improve a confusing form or checkout flow?" },
+      { id: 3, question: "Explain one real problem you solved using this skill." },
+    ];
     body.append("skillName", "UI/UX Design");
-    body.append("taskDescription", "Explain a transaction history screen design.");
+    body.append("taskDescription", JSON.stringify({
+      type: "skill_viva_questions",
+      skillName: "UI/UX Design",
+      instructions: "Answer all three questions in one video. Speak clearly and explain your reasoning with examples.",
+      questions,
+    }));
     body.append("video", new Blob([await fs.readFile(temporaryVideo)], { type: "video/mp4" }), "sample.mp4");
     const upload = await request("/skills/upload", { method: "POST", headers: { Authorization: `Bearer ${session.token}` }, body });
     let verification;
@@ -56,10 +66,7 @@ async function main() {
       if (!["pending", "processing"].includes(verification.status)) break;
     }
     console.log(JSON.stringify({ verificationId: verification.id, status: verification.status, analysisError: verification.analysis_error }));
-    if (!process.env.HF_TOKEN && (verification.status !== "failed" || verification.analysis_error !== "HF_TOKEN is not configured.")) {
-      throw new Error("Expected a clear missing HF_TOKEN failure.");
-    }
-    if (process.env.HF_TOKEN && verification.status !== "review_ready") {
+    if (!["review_ready", "verified"].includes(verification.status)) {
       throw new Error(verification.analysis_error || `Expected review_ready status, received ${verification.status}.`);
     }
   } finally {

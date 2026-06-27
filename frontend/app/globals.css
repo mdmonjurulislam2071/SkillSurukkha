@@ -15,7 +15,7 @@ html {
 body {
   margin: 0;
   color: #071a17;
-  background: #f5faf7;
+  background: #f6f8f4;
   font-family: "Outfit", "Hind Siliguri", sans-serif;
 }
 
@@ -42,8 +42,7 @@ textarea {
 }
 
 .dot-grid {
-  background-image: radial-gradient(rgba(12, 59, 50, 0.12) 1px, transparent 1px);
-  background-size: 18px 18px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .hide-scrollbar::-webkit-scrollbar {

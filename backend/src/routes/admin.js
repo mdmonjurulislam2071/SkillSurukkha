@@ -7,7 +7,14 @@ const router = express.Router();
 
 router.get("/users", authenticate, allowRoles("admin"), async (_, res, next) => {
   try {
-    const [users] = await pool.query(`SELECT id, name, email, mobile, role, status, created_at FROM users ORDER BY created_at DESC`);
+    const [users] = await pool.query(
+      `SELECT u.id, u.name, u.email, u.mobile, u.role, u.status, u.created_at, n.status AS nid_status
+       FROM users u
+       LEFT JOIN nid_verifications n ON n.id = (
+         SELECT nv.id FROM nid_verifications nv WHERE nv.user_id = u.id ORDER BY nv.id DESC LIMIT 1
+       )
+       ORDER BY u.created_at DESC`
+    );
     res.json({ users });
   } catch (error) { next(error); }
 });
@@ -26,7 +33,47 @@ router.get("/overview", authenticate, allowRoles("admin"), async (_, res, next) 
     const [[projects]] = await pool.query(`SELECT COUNT(*) AS total FROM projects`);
     const [[escrows]] = await pool.query(`SELECT COALESCE(SUM(GREATEST(amount - released_amount - refunded_amount, 0)), 0) AS funded FROM escrows WHERE status IN ('funded','partially_released')`);
     const [[pendingSkills]] = await pool.query(`SELECT COUNT(*) AS total FROM skill_verifications WHERE status IN ('pending','processing','review_ready')`);
-    res.json({ users: users.total, projects: projects.total, fundedEscrow: escrows.funded, pendingSkillReviews: pendingSkills.total });
+    const [[pendingNids]] = await pool.query(`SELECT COUNT(*) AS total FROM nid_verifications WHERE status = 'pending'`);
+    res.json({ users: users.total, projects: projects.total, fundedEscrow: escrows.funded, pendingSkillReviews: pendingSkills.total, pendingNidReviews: pendingNids.total });
+  } catch (error) { next(error); }
+});
+
+router.get("/nid-verifications", authenticate, allowRoles("admin"), async (_, res, next) => {
+  try {
+    const [verifications] = await pool.query(
+      `SELECT n.*, u.name, u.email, u.mobile, u.role, reviewer.name AS reviewer_name
+       FROM nid_verifications n
+       JOIN users u ON u.id = n.user_id
+       LEFT JOIN users reviewer ON reviewer.id = n.reviewed_by
+       ORDER BY FIELD(n.status, 'pending', 'rejected', 'verified'), n.created_at DESC, n.id DESC`
+    );
+    res.json({ verifications });
+  } catch (error) { next(error); }
+});
+
+router.patch("/nid-verifications/:id", authenticate, allowRoles("admin"), async (req, res, next) => {
+  try {
+    const status = req.body.status;
+    const reason = req.body.reason?.trim() || null;
+    if (!["verified", "rejected"].includes(status)) return res.status(400).json({ message: "Choose verified or rejected." });
+    if (status === "rejected" && !reason) return res.status(400).json({ message: "Provide a rejection reason." });
+    const [result] = await pool.query(
+      `UPDATE nid_verifications
+       SET status = ?, rejection_reason = ?, reviewed_by = ?, reviewed_at = NOW()
+       WHERE id = ? AND status = 'pending'`,
+      [status, status === "rejected" ? reason : null, req.user.id, req.params.id]
+    );
+    if (!result.affectedRows) return res.status(404).json({ message: "Pending NID verification not found." });
+    const [[verification]] = await pool.query(`SELECT user_id FROM nid_verifications WHERE id = ?`, [req.params.id]);
+    await notify(
+      pool,
+      verification.user_id,
+      "nid_verification_updated",
+      status === "verified" ? "NID verification approved" : "NID verification rejected",
+      status === "verified" ? "Your NID has been verified. You can now access your account dashboard." : `Your NID verification was rejected: ${reason}`,
+      { route: "dashboard", nidStatus: status }
+    );
+    res.json({ message: status === "verified" ? "NID verification approved." : "NID verification rejected." });
   } catch (error) { next(error); }
 });
 

@@ -88,7 +88,7 @@ Skill verification videos can be uploaded with `POST /api/skills/upload`. The ba
 1. Stores the uploaded MP4, MOV or WEBM file.
 2. Reads media metadata with FFprobe and enforces the 5-minute limit.
 3. Extracts mono audio with FFmpeg.
-4. Sends audio to Hugging Face hosted inference using `openai/whisper-large-v3`.
+4. Sends audio to Hugging Face hosted inference using `openai/whisper-large-v3`, then falls back to a local Whisper model if hosted inference is unavailable or out of credits.
 5. Stores the transcript, media metadata, basic authenticity report and preliminary score.
 6. Moves the submission to `review_ready` for admin review and badge issuance.
 
@@ -97,12 +97,18 @@ Configure:
 ```env
 HF_TOKEN=
 HF_ASR_MODEL=openai/whisper-large-v3
+SKILL_TRANSCRIPTION_PROVIDERS=huggingface,local
+WHISPER_COMMAND=whisper
+WHISPER_COMMAND_ARGS=
+WHISPER_MODEL=base
+WHISPER_MODEL_DIR=
+WHISPER_LANGUAGE=en
 FFMPEG_PATH=ffmpeg
 FFPROBE_PATH=ffprobe
 SKILL_VIDEO_MAX_MB=150
 ```
 
-Use `GET /api/skills/pipeline-health` as an admin to verify configuration. Install FFmpeg on the host and set `HF_TOKEN` before enabling hosted analysis.
+Use `GET /api/skills/pipeline-health` as an admin to verify configuration. Install FFmpeg on the host and set `HF_TOKEN` before enabling hosted analysis. For the local Whisper fallback, install the Whisper CLI with Python and make sure `WHISPER_COMMAND` is available on the backend process path. If Hugging Face credits are exhausted, the backend automatically tries the local Whisper provider before sending the submission to manual review.
 
 The MVP authenticity report checks media structure, duration and explanation evidence. It is intentionally not described as a deepfake detector or as a fully autonomous proof of skill quality. Admin review remains required before issuing a badge.
 

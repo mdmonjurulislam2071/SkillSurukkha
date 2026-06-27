@@ -5,6 +5,7 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import Swal from "sweetalert2";
 import { io } from "socket.io-client";
+import ThemeBackground from "../components/ThemeBackground";
 import {
   FiArrowRight,
   FiAward,
@@ -108,7 +109,7 @@ async function api(path, options = {}) {
 
 const formatCurrency = (value) => `৳ ${Number(value || 0).toLocaleString()}`;
 const formatPlainNumber = (value) => Number(value || 0).toLocaleString();
-const CLIENT_PASS_SCORE = 50;
+const CLIENT_PASS_SCORE = 25;
 const canClientReviewProject = (project) => {
   const score = project.latest_evaluation_score == null ? null : Number(project.latest_evaluation_score);
   return project.status === "submitted" || (project.latest_submission_status === "ai_revision_required" && score !== null && score > CLIENT_PASS_SCORE);
@@ -374,6 +375,15 @@ function evaluationReportHtml(submission) {
   return `<div style="text-align:left"><div style="border-radius:18px;background:${Number(submission.evaluation_score) > 50 ? "#ecfdf5" : "#fff7ed"};padding:18px"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><p style="margin:0;color:#64748b;font-size:12px;font-weight:700;text-transform:uppercase">Version ${Number(submission.version_number || 1)} · Requirement match</p><h2 style="margin:5px 0 0;color:#123c35;font-size:28px">${submission.evaluation_score == null ? "Pending" : `${Number(submission.evaluation_score)}%`}</h2></div><span style="border-radius:999px;background:white;padding:8px 12px;color:#047857;font-size:11px;font-weight:800;text-transform:uppercase">${escapeHtml(submission.status.replace(/_/g, " "))}</span></div><p style="margin:10px 0 0;color:#475569;font-size:13px;line-height:1.6">${escapeHtml(report.summary || submission.evaluation_error || "Automated review is still running.")}</p><p style="margin:10px 0 0;color:#64748b;font-size:11px">Reviewer: ${escapeHtml(submission.evaluation_model || submission.evaluation_provider || "pending")}${submission.ai_badge_reference ? ` · Badge: ${escapeHtml(submission.ai_badge_reference)}` : ""}</p><p style="margin:8px 0 0;color:#64748b;font-size:11px">${submission.dispute_deadline ? `Dispute hold: ${escapeHtml(new Date(submission.dispute_deadline).toLocaleString())}` : ""}${submission.review_deadline ? ` · Review deadline: ${escapeHtml(new Date(submission.review_deadline).toLocaleString())}` : ""}${submission.initial_release_at ? " · 90% released" : ""}</p>${links ? `<p style="margin:10px 0 0;font-size:12px">${links}</p>` : ""}</div>${revision.issue ? `<section style="margin-top:12px;border-radius:14px;background:#fff7ed;padding:14px;color:#9a3412;font-size:12px"><strong>Client revision request</strong><p>${escapeHtml(revision.issue)}</p><p><strong>Expected:</strong> ${escapeHtml(revision.expectedResult)}</p><p><strong>Evidence:</strong> ${escapeHtml(revision.evidence)}</p></section>` : ""}${requirementCards}${report.risks?.length ? `<section style="margin-top:12px;border-radius:14px;background:#fff1f2;padding:14px;color:#9f1239;font-size:12px"><strong>Review limitations / risks</strong>${reportList(report.risks, "")}</section>` : ""}</div>`;
 }
 
+function deliveryLinksHtml(submission) {
+  const links = [
+    submission.repository_url && ["GitHub / repository", submission.repository_url],
+    submission.live_url && ["Live demo", submission.live_url],
+  ].filter(Boolean);
+  if (!links.length) return `<p style="margin:0;color:#64748b;font-size:13px;line-height:1.6">No repository or live demo link was included with this accepted submission.</p>`;
+  return `<div style="text-align:left"><p style="margin:0 0 14px;color:#64748b;font-size:13px;line-height:1.6">Accepted submission v${Number(submission.version_number || 1)} delivery links are available below.</p><div style="display:grid;gap:10px">${links.map(([label, url]) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #d1fae5;border-radius:14px;padding:12px 14px;color:#047857;font-size:13px;font-weight:800;text-decoration:none"><span>${escapeHtml(label)}</span><span style="max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b;font-size:12px;font-weight:600">${escapeHtml(url)}</span></a>`).join("")}</div></div>`;
+}
+
 function projectRequirements(project) {
   try {
     const requirements = typeof project.requirements === "string" ? JSON.parse(project.requirements || "[]") : project.requirements || [];
@@ -463,8 +473,10 @@ const sidebar = [
   ["myWork", FiUploadCloud],
   ["reviews", FiFileText],
   ["verify", FiShield],
+  ["nidVerification", FiCheckCircle],
   ["payments", FiCreditCard],
   ["messages", FiMessageCircle],
+  ["notifications", FiBell],
   ["settings", FiSettings],
 ];
 
@@ -531,9 +543,7 @@ function Header({ lang, setLang, onLogin }) {
 function Hero({ lang, onLogin }) {
   const t = copy[lang];
   return (
-    <section className="relative overflow-hidden bg-ink bg-hero-grid bg-[size:52px_52px] pt-32 text-white lg:pt-40">
-      <div className="absolute -left-32 top-24 h-96 w-96 rounded-full bg-emerald-500/20 blur-3xl" />
-      <div className="absolute right-0 top-48 h-80 w-80 rounded-full bg-amber-400/10 blur-3xl" />
+    <ThemeBackground className="relative overflow-hidden pt-32 text-white lg:pt-40">
       <div className="relative mx-auto grid max-w-7xl gap-14 px-5 pb-24 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:pb-32">
         <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65 }}>
           <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3.5 py-2 text-xs font-semibold text-emerald-200">
@@ -647,16 +657,15 @@ function Hero({ lang, onLogin }) {
           ))}
         </div>
       </div>
-    </section>
+    </ThemeBackground>
   );
 }
 
 function HeroCard({ lang }) {
   return (
     <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.15 }} className="relative mx-auto w-full max-w-lg">
-      <div className="absolute -inset-5 rounded-[40px] bg-emerald-400/10 blur-2xl" />
       <div className="glass relative overflow-hidden rounded-[30px] p-4 shadow-2xl">
-        <div className="relative overflow-hidden rounded-[23px] bg-gradient-to-br from-emerald-100 via-white to-amber-50 p-5 text-ink">
+        <div className="relative overflow-hidden rounded-[23px] bg-[#f8faf7] p-5 text-ink">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div className="grid h-14 w-14 place-items-center rounded-2xl bg-forest text-lg font-bold text-emerald-200">AR</div>
@@ -714,7 +723,7 @@ function Landing({ lang, setLang, onLogin }) {
     <>
       <Header lang={lang} setLang={setLang} onLogin={onLogin} />
       <Hero lang={lang} onLogin={onLogin} />
-      <section id="process" className="relative px-5 py-24 lg:px-8">
+      <section id="process" className="relative bg-[#f6f8f4] px-5 py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <SectionTitle kicker={tx(lang, "সহজ ও নিরাপদ", "Simple & Secure")} title={tx(lang, "কাজ করুন নিশ্চিন্তে, মাত্র তিন ধাপে", "Work confidently in just three steps")} text={tx(lang, "দক্ষতা যাচাই থেকে নিরাপদ পেমেন্ট পর্যন্ত প্রতিটি ধাপে থাকছে স্বচ্ছতা।", "Every step stays transparent, from skill verification to secure payment.")} />
           <div className="mt-14 grid gap-5 md:grid-cols-3">
@@ -730,13 +739,7 @@ function Landing({ lang, setLang, onLogin }) {
                 viewport={{ once: false, amount: 0.3 }}
                 transition={{ duration: 1.15, delay: index * 0.18, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ y: -8 }}
-                className={`relative overflow-hidden rounded-[26px] border border-white/70 p-7 shadow-card ${
-                  [
-                    "bg-gradient-to-br from-emerald-50 via-white to-teal-100/70",
-                    "bg-gradient-to-br from-sky-50 via-white to-cyan-100/70",
-                    "bg-gradient-to-br from-amber-50 via-white to-orange-100/70",
-                  ][index]
-                }`}
+                className="relative overflow-hidden rounded-[26px] border border-[#e2ebe5] bg-white p-7 shadow-card"
               >
                 <span className="absolute right-5 top-4 text-5xl font-extrabold text-emerald-300">{count}</span>
                 <div className="grid h-12 w-12 place-items-center rounded-2xl bg-forest text-xl text-emerald-300"><Icon /></div>
@@ -747,7 +750,7 @@ function Landing({ lang, setLang, onLogin }) {
           </div>
         </div>
       </section>
-      <section id="features" className="bg-forest px-5 py-24 text-white lg:px-8">
+      <ThemeBackground id="features" className="px-5 py-24 text-white lg:px-8">
         <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.24em] text-emerald-300">{tx(lang, "বিশ্বাসের জন্য নির্মিত", "Designed for trust")}</p>
@@ -762,19 +765,19 @@ function Landing({ lang, setLang, onLogin }) {
             </div>
           </div>
           <div className="dot-grid rounded-[34px] bg-white/5 p-6">
-            <div className="rounded-[26px] bg-white p-6 text-ink shadow-2xl">
+            <motion.div whileHover={{ y: -5 }} className="glass relative rounded-[26px] p-6 text-white shadow-[0_0_40px_rgba(52,211,153,0.15)] overflow-hidden">
               <div className="flex items-center justify-between">
-                <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-600">{tx(lang, "এসক্রো সুরক্ষিত", "Escrow Protected")}</p><p className="mt-2 text-2xl font-bold">{tx(lang, "নিরাপদ লেনদেন", "Secure transaction")}</p></div>
-                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-emerald-100 text-2xl text-emerald-700"><FiLock /></div>
+                <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-300 drop-shadow-sm">{tx(lang, "এসক্রো সুরক্ষিত", "Escrow Protected")}</p><p className="mt-2 text-2xl font-bold">{tx(lang, "নিরাপদ লেনদেন", "Secure transaction")}</p></div>
+                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-emerald-400/20 text-2xl text-emerald-300 border border-emerald-400/30 shadow-[0_0_15px_rgba(52,211,153,0.3)]"><FiLock /></div>
               </div>
-              <div className="my-6 h-px bg-slate-100" />
-              <div className="flex justify-between text-sm"><span className="text-slate-400">{tx(lang, "প্রজেক্ট পেমেন্ট", "Project Payment")}</span><strong>{tx(lang, "৳ ৩৫,০০০", "৳ 35,000")}</strong></div>
-              <div className="mt-4 flex justify-between text-sm"><span className="text-slate-400">{tx(lang, "অবস্থা", "Status")}</span><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">{tx(lang, "এসক্রোতে লক করা", "LOCKED IN ESCROW")}</span></div>
-            </div>
+              <div className="my-6 h-px bg-white/10" />
+              <div className="flex justify-between text-sm"><span className="text-white/60">{tx(lang, "প্রজেক্ট পেমেন্ট", "Project Payment")}</span><strong>{tx(lang, "৳ ৩৫,০০০", "৳ 35,000")}</strong></div>
+              <div className="mt-4 flex justify-between text-sm items-center"><span className="text-white/60">{tx(lang, "অবস্থা", "Status")}</span><span className="rounded-full bg-amber-400/20 border border-amber-400/30 px-3 py-1 text-xs font-bold text-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.2)]">{tx(lang, "এসক্রোতে লক করা", "LOCKED IN ESCROW")}</span></div>
+            </motion.div>
           </div>
         </div>
-      </section>
-      <section id="jobs" className="px-5 py-24 lg:px-8">
+      </ThemeBackground>
+      <section id="jobs" className="bg-[#f6f8f4] px-5 py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <SectionTitle kicker={tx(lang, "নতুন সুযোগ", "Fresh opportunities")} title={tx(lang, "আপনার জন্য বাছাই করা কাজ", "Selected projects for you")} text={tx(lang, "ভেরিফাইড ক্লায়েন্টদের প্রকাশিত সাম্প্রতিক কাজগুলো দেখুন এবং আজই আবেদন করুন।", "Explore recent projects from verified clients and apply today.")} />
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
@@ -904,13 +907,62 @@ function AuthModal({ close, enterDashboard, lang }) {
   );
 }
 
+function NidVerificationGate({ token, user, leave, onVerified }) {
+  const [verification, setVerification] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [nidNumber, setNidNumber] = useState("");
+  const [frontImage, setFrontImage] = useState(null);
+  const [backImage, setBackImage] = useState(null);
+  const authHeaders = { Authorization: `Bearer ${token}` };
+  const loadVerification = useCallback(() => {
+    setLoading(true);
+    api("/profiles/nid-verification", { headers: authHeaders })
+      .then(({ verification: data }) => {
+        setVerification(data || null);
+        if (data?.status === "verified") onVerified();
+      })
+      .catch((error) => Swal.fire({ title: "NID verification", text: error.message, icon: "error" }))
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, onVerified]);
+  useEffect(() => { loadVerification(); }, [loadVerification]);
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!/^[0-9]{10,17}$/.test(nidNumber.trim())) return Swal.fire({ title: "Invalid NID", text: "Enter a valid 10 to 17 digit National ID number.", icon: "warning" });
+    if (!frontImage || !backImage) return Swal.fire({ title: "Images required", text: "Upload both front and back side NID images.", icon: "warning" });
+    const body = new FormData();
+    body.append("nidNumber", nidNumber.trim());
+    body.append("frontImage", frontImage);
+    body.append("backImage", backImage);
+    try {
+      setSubmitting(true);
+      const response = await fetch(`${API_URL}/profiles/nid-verification`, { method: "POST", headers: authHeaders, body });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "NID submission failed.");
+      setVerification(data.verification);
+      setNidNumber("");
+      setFrontImage(null);
+      setBackImage(null);
+      Swal.fire({ title: "Submitted successfully", text: "Your NID verification is now processing.", icon: "success", confirmButtonColor: "#0c3b32" });
+    } catch (error) {
+      Swal.fire({ title: "NID verification", text: error.message, icon: "error" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  const pending = verification?.status === "pending";
+  const rejected = verification?.status === "rejected";
+  return <main className="min-h-screen bg-[#f6f8f4] px-5 py-8 text-forest sm:px-8"><div className="mx-auto max-w-3xl"><div className="flex items-center justify-between gap-4"><Logo lang="en" /><button onClick={leave} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm">Log out</button></div><section className="mt-8 rounded-[28px] bg-white p-6 shadow-card sm:p-8"><div className="flex flex-wrap items-start justify-between gap-5"><div><p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-600">National ID verification</p><h1 className="mt-3 text-3xl font-black text-forest">Verify your identity</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">Hi {user.name}, submit your National ID number with clear front and back side images. You can access your account after NID verification by Admin.</p></div><div className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-100 text-3xl text-emerald-700"><FiShield /></div></div>{loading ? <p className="mt-8 text-sm font-bold text-slate-400">Loading verification status...</p> : pending ? <div className="mt-8 rounded-2xl border border-cyan-100 bg-cyan-50 p-5 text-cyan-800"><h2 className="font-black">Your NID verification is now processing.</h2><p className="mt-2 text-sm leading-6">Submitted successfully. You can access your account after NID verification by Admin.</p><button onClick={loadVerification} className="mt-4 rounded-full bg-cyan-600 px-4 py-2 text-xs font-bold text-white">Refresh status</button></div> : <><div className={`mt-8 rounded-2xl p-5 ${rejected ? "border border-red-100 bg-red-50 text-red-700" : "border border-emerald-100 bg-emerald-50 text-emerald-800"}`}><h2 className="font-black">{rejected ? "Your NID verification was rejected." : "NID verification required."}</h2><p className="mt-2 text-sm leading-6">{rejected ? verification.rejection_reason || "Admin rejected the submission. Please submit correct information again." : "Submit your National ID details to continue."}</p></div><form onSubmit={submit} className="mt-7 grid gap-5"><label className="block text-sm font-bold text-slate-600">National ID number<input value={nidNumber} onChange={(event) => setNidNumber(event.target.value.replace(/\D/g, ""))} maxLength={17} className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-emerald-400" placeholder="10 to 17 digit NID number" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="block rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/50 p-4 text-sm font-bold text-slate-600"><FiUploadCloud className="mb-3 text-2xl text-emerald-600" />Front side image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFrontImage(event.target.files?.[0] || null)} className="mt-3 block w-full text-xs text-slate-500" />{frontImage && <span className="mt-2 block truncate text-xs text-emerald-700">{frontImage.name}</span>}</label><label className="block rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/50 p-4 text-sm font-bold text-slate-600"><FiUploadCloud className="mb-3 text-2xl text-emerald-600" />Back side image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setBackImage(event.target.files?.[0] || null)} className="mt-3 block w-full text-xs text-slate-500" />{backImage && <span className="mt-2 block truncate text-xs text-emerald-700">{backImage.name}</span>}</label></div><button disabled={submitting} className="rounded-full bg-forest px-6 py-4 text-sm font-black text-white disabled:bg-slate-300">{submitting ? "Submitting..." : "Submit for admin verification"}</button></form></>}</section></div></main>;
+}
+
 function Dashboard({ lang, setLang, leave, session }) {
   const t = copy[lang];
   const user = session.user;
   const initials = user.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const routeStorageKey = `skillshurokkha_dashboard_route_${user.id}`;
   const allowedRoutes = user.role === "admin"
-    ? ["dashboard", "notifications", "settings"]
+    ? ["dashboard", "nidVerification", "notifications", "settings"]
     : user.role === "client"
       ? ["dashboard", "projects", "reviews", "applicants", "applicantDetails", "payments", "messages", "notifications", "settings"]
       : ["dashboard", "projects", "myWork", "applicants", "applicantDetails", "verify", "payments", "messages", "notifications", "settings"];
@@ -926,13 +978,14 @@ function Dashboard({ lang, setLang, leave, session }) {
   const [menu, setMenu] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [nidAccess, setNidAccess] = useState(user.role === "admin" || user.nid_status === "verified");
   const alert = (title, text, icon = "success") => Swal.fire({ title, text, icon, confirmButtonColor: "#0c3b32" });
-  const labels = { dashboard: t.dashboard, projects: t.projects, myWork: "My Work", reviews: "Submitted Work", verify: t.verify, payments: t.payments, messages: t.messages, notifications: "Notifications", settings: t.settings };
+  const labels = { dashboard: t.dashboard, projects: t.projects, myWork: "My Work", reviews: "Submitted Work", verify: t.verify, nidVerification: "NID Verification", payments: t.payments, messages: t.messages, notifications: "Notifications", settings: t.settings };
   const visibleSidebar = sidebar.filter(([key]) => user.role === "admin"
-    ? ["dashboard", "notifications", "settings"].includes(key)
+    ? ["dashboard", "nidVerification", "notifications", "settings"].includes(key)
     : user.role === "client"
-      ? !["verify", "myWork"].includes(key)
-      : key !== "reviews");
+      ? !["verify", "myWork", "nidVerification"].includes(key)
+      : !["reviews", "nidVerification"].includes(key));
   const leaveDashboard = () => {
     if (typeof window !== "undefined") sessionStorage.removeItem(routeStorageKey);
     leave();
@@ -1075,8 +1128,12 @@ function Dashboard({ lang, setLang, leave, session }) {
     return () => notificationSocket.disconnect();
   }, [session.token]);
 
+  if (!nidAccess && user.role !== "admin") {
+    return <NidVerificationGate token={session.token} user={user} leave={leaveDashboard} onVerified={() => setNidAccess(true)} />;
+  }
+
   return (
-    <div className="min-h-screen bg-cloud">
+    <div className="min-h-screen bg-[#f6f8f4]">
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-ink p-5 text-white transition-transform lg:translate-x-0 ${menu ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center justify-between"><Logo dark lang={lang} /><button className="lg:hidden" onClick={() => setMenu(false)}><FiX /></button></div>
         <div className="mt-11 space-y-1">
@@ -1092,7 +1149,7 @@ function Dashboard({ lang, setLang, leave, session }) {
             <div className="mt-2 h-1.5 rounded-full bg-white/10"><div className="h-full rounded-full bg-emerald-400" style={{ width: `${profileCompletion}%` }} /></div>
             <p className="mt-2 text-xs font-bold text-emerald-300">{profileCompletion}% complete</p>
           </div>
-          <button onClick={leaveDashboard} className="flex w-full items-center gap-3 rounded-2xl border border-rose-300/35 bg-rose-600 px-4 py-3 text-left text-sm font-bold text-white shadow-sm shadow-rose-950/20 transition hover:bg-rose-500"><FiLogOut className="shrink-0 text-rose-100" /> {tx(lang, "লগ আউট", "Log out")}</button>
+          <button onClick={leaveDashboard} className="flex w-full items-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-left text-sm font-bold text-white/70 transition hover:bg-rose-600 hover:text-white hover:border-rose-500"><FiLogOut className="shrink-0 text-xl" /> {tx(lang, "লগ আউট", "Log out")}</button>
         </div>
       </aside>
       <main className="lg:ml-64">
@@ -1110,6 +1167,7 @@ function Dashboard({ lang, setLang, leave, session }) {
         <AnimatePresence mode="wait">
           <motion.section key={active} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-5 sm:p-8">
             {active === "dashboard" && (user.role === "admin" ? <AdminDashboard lang={lang} token={session.token} /> : <DashboardHome t={t} lang={lang} user={user} token={session.token} changeTab={openTab} />)}
+            {active === "nidVerification" && user.role === "admin" && <AdminNidVerificationPage token={session.token} />}
             {active === "projects" && <ManagedProjects lang={lang} role={user.role} token={session.token} openApplicants={(project, applications) => openTab("applicants", { project, applications })} />}
             {active === "myWork" && user.role === "freelancer" && <ManagedProjects lang={lang} role={user.role} token={session.token} freelancerWorkspace openApplicants={(project, applications) => openTab("applicants", { project, applications })} />}
             {active === "reviews" && user.role === "client" && <ManagedProjects lang={lang} role={user.role} token={session.token} reviewInbox openApplicants={(project, applications) => openTab("applicants", { project, applications })} />}
@@ -1402,6 +1460,15 @@ function ManagedProjects({ lang, role, token, openApplicants, reviewInbox = fals
       await downloadSubmission(project, submission);
     } catch (error) { Swal.fire({ title: "Protected delivery", text: error.message, icon: "error" }); }
   };
+  const delivery = async (project) => {
+    try {
+      const data = await api(`/projects/${project.id}/submissions`, { headers: headers() });
+      const submissions = data.submissions || [];
+      const submission = submissions.find((item) => item.repository_url || item.live_url) || submissions[0];
+      if (!submission) return Swal.fire({ title: "Delivery links", text: "No submitted work is available yet.", icon: "info" });
+      await Swal.fire({ title: "Delivery links", html: deliveryLinksHtml(submission), width: 640, confirmButtonText: "Close", confirmButtonColor: "#0c3b32" });
+    } catch (error) { Swal.fire({ title: "Delivery links", text: error.message, icon: "error" }); }
+  };
   const review = async (project) => {
     try {
       const data = await api(`/projects/${project.id}/submissions`, { headers: headers() });
@@ -1463,7 +1530,7 @@ function ManagedProjects({ lang, role, token, openApplicants, reviewInbox = fals
     const result = await Swal.fire({ title: "Open dispute", input: "textarea", inputPlaceholder: "Describe the issue", showCancelButton: true, confirmButtonColor: "#0c3b32", inputValidator: (value) => !value.trim() ? "Provide a reason." : undefined });
     if (result.isConfirmed) await runAction(`/projects/${project.id}/disputes`, { method: "POST", body: JSON.stringify({ reason: result.value }) }, "Dispute opened for admin review");
   };
-  const actions = { apply, fund, applicants, submit, report, download, review, extend, explain, refund, dispute };
+  const actions = { apply, fund, applicants, submit, report, download, delivery, review, extend, explain, refund, dispute };
   const submittedProjects = projects.filter((project) => project.latest_submission_id);
   const reviewCounts = {
     all: submittedProjects.length,
@@ -1598,6 +1665,7 @@ function ReviewQueueCard({ project, actions }) {
       <div className="flex flex-wrap justify-start gap-2 xl:justify-end">
         {canReview && <button onClick={() => actions.review(project)} className="rounded-full bg-forest px-4 py-2.5 text-xs font-black text-white">Review & decide</button>}
         <button onClick={() => actions.report(project)} className="rounded-full bg-violet-100 px-4 py-2.5 text-xs font-black text-violet-700">AI report</button>
+        {project.status === "completed" && <button onClick={() => actions.delivery(project)} className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-4 py-2.5 text-xs font-black text-sky-700"><FiExternalLink /> Delivery links</button>}
         {project.status === "completed" && <button onClick={() => actions.download(project)} className="rounded-full bg-emerald-100 px-4 py-2.5 text-xs font-black text-emerald-700">Download versions</button>}
       </div>
     </div>
@@ -1676,6 +1744,16 @@ function Metric({ label, value }) {
 }
 
 function ApplicantDetailsPage({ project, applicant, back, runAction, openMessage, fundEscrow, rateFreelancer }) {
+  const [verifiedBadges, setVerifiedBadges] = useState([]);
+  useEffect(() => {
+    if (!applicant?.freelancer_id) {
+      setVerifiedBadges([]);
+      return;
+    }
+    api(`/skills/badges/${applicant.freelancer_id}`)
+      .then((data) => setVerifiedBadges(data.badges || []))
+      .catch(() => setVerifiedBadges([]));
+  }, [applicant?.freelancer_id]);
   if (!project || !applicant) return <EmptyState Icon={FiBriefcase} title="Applicant not found" text="Go back to applicants list and choose a freelancer." />;
   const status = applicant.status || "pending";
   const skills = applicantSkills(applicant);
@@ -1693,9 +1771,10 @@ function ApplicantDetailsPage({ project, applicant, back, runAction, openMessage
     ["Standard", "Complete project delivery", packageBase, applicant.estimated_delivery_date ? new Date(applicant.estimated_delivery_date).toLocaleDateString() : "On schedule"],
     ["Premium", "Delivery plus polish and support", Math.round(packageBase * 1.35), "Priority"],
   ];
-  return <ApplicantMarketplaceProfile project={project} applicant={applicant} back={back} runAction={runAction} openMessage={openMessage} fundEscrow={fundEscrow} rateFreelancer={rateFreelancer} status={status} skills={skills} attachmentUrl={attachmentUrl} canShortlist={canShortlist} canHire={canHire} canMessage={canMessage} escrowFunded={escrowFunded} stats={stats} location={location} skillScore={skillScore} packages={packages} />;
+  return <ApplicantMarketplaceProfile project={project} applicant={applicant} back={back} runAction={runAction} openMessage={openMessage} fundEscrow={fundEscrow} rateFreelancer={rateFreelancer} status={status} skills={skills} verifiedBadges={verifiedBadges} attachmentUrl={attachmentUrl} canShortlist={canShortlist} canHire={canHire} canMessage={canMessage} escrowFunded={escrowFunded} stats={stats} location={location} skillScore={skillScore} packages={packages} />;
 }
-function ApplicantMarketplaceProfile({ project, applicant, back, runAction, openMessage, fundEscrow, rateFreelancer, status, skills, attachmentUrl, canShortlist, canHire, canMessage, escrowFunded, stats, location, skillScore, packages }) {
+function ApplicantMarketplaceProfile({ project, applicant, back, runAction, openMessage, fundEscrow, rateFreelancer, status, skills, verifiedBadges = [], attachmentUrl, canShortlist, canHire, canMessage, escrowFunded, stats, location, skillScore, packages }) {
+  const verifiedSkillLookup = badgesBySkill(verifiedBadges);
   return <div>
     <button onClick={back} className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-emerald-700"><FiArrowRight className="rotate-180" /> Back to applicants</button>
     <div className="grid gap-6 xl:grid-cols-[1fr_330px]">
@@ -1727,7 +1806,7 @@ function ApplicantMarketplaceProfile({ project, applicant, back, runAction, open
             </div>
             <section className="mt-7 border-t border-slate-100 pt-6"><h2 className="text-xl font-black text-forest">About this freelancer</h2><p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">{applicant.bio || "This freelancer has not added a full profile bio yet, but their proposal below explains their fit for this project."}</p></section>
             <section className="mt-7 border-t border-slate-100 pt-6"><h2 className="text-xl font-black text-forest">Proposal for this project</h2><p className="mt-3 whitespace-pre-wrap rounded-2xl bg-slate-50 p-5 text-sm leading-7 text-slate-600">{applicant.cover_letter || "Attached document only."}</p>{attachmentUrl && /^https?:\/\//i.test(attachmentUrl) && <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-xs font-black text-emerald-700"><FiExternalLink /> Open attached proposal</a>}</section>
-            <section className="mt-7 border-t border-slate-100 pt-6"><h2 className="text-xl font-black text-forest">Skills and expertise</h2><div className="mt-4 flex flex-wrap gap-2">{skills.length ? skills.map((skill) => <span key={skill} className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700">{skill}</span>) : <span className="text-sm text-slate-400">No skills listed</span>}</div></section>
+            <section className="mt-7 border-t border-slate-100 pt-6"><h2 className="text-xl font-black text-forest">Skills and expertise</h2><div className="mt-4 flex flex-wrap gap-2">{skills.length ? skills.map((skill) => <SkillChip key={skill} skill={skill} badge={verifiedSkillLookup[normalizeSkillName(skill)]} className="text-xs" />) : <span className="text-sm text-slate-400">No skills listed</span>}</div></section>
           </div>
           <aside className="space-y-4">
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5"><h2 className="font-black text-forest">Profile highlights</h2><div className="mt-4 space-y-3 text-sm text-slate-600"><p><FiAward className="mr-2 inline text-emerald-600" />AI verified skill score: <strong className="text-forest">{skillScore}</strong></p><p><FiBriefcase className="mr-2 inline text-emerald-600" />{stats.projects}+ portfolio-ready project{stats.projects === 1 ? "" : "s"}</p><p><FiGlobe className="mr-2 inline text-emerald-600" />Marketplace profile optimized</p></div></div>
@@ -1758,6 +1837,7 @@ function ManagedProjectCard({ project, role, actions }) {
   if (role === "freelancer" && ["in_progress", "overdue", "submitted", "revision_required", "completed"].includes(project.status) && project.application_status === "hired") button("Version reports", actions.report, "bg-violet-100 text-violet-700");
   if (role === "client" && canClientReviewProject(project)) button("Review work", actions.review);
   if (role === "client" && (["submitted", "revision_required", "completed"].includes(project.status) || project.latest_submission_id)) button("Version reports", actions.report, "bg-violet-100 text-violet-700");
+  if (role === "client" && project.status === "completed") button("Delivery links", actions.delivery, "bg-sky-100 text-sky-700");
   if (role === "client" && project.status === "completed") button("Download versions", actions.download, "bg-emerald-100 text-emerald-700");
   if (role === "freelancer" && ["in_progress", "overdue", "submitted", "revision_required", "completed"].includes(project.status) && project.application_status === "hired") button("My ZIP backups", actions.download, "bg-slate-100 text-slate-700");
   if (role === "client" && ["in_progress", "overdue"].includes(project.status)) button("Extend deadline", actions.extend, "bg-sky-100 text-sky-700");
@@ -1799,6 +1879,16 @@ const skillBadgeTier = (score) => {
 
 const skillBadgeLabel = (verification) => verification.badge_reference || `${verification.skill_name} ${skillBadgeTier(verification.ai_score)}`;
 
+const latestVerificationPerSkill = (items = []) => {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = String(item.skill_name || "").trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 function VerificationCard({ verification, action, actionLabel, admin = false }) {
   const status = verificationStatus[verification.status] || [verification.status, "bg-slate-100 text-slate-600"];
   const report = parseStoredJson(verification.authenticity_report);
@@ -1831,7 +1921,7 @@ function VerificationCard({ verification, action, actionLabel, admin = false }) 
 }
 
 const taskForSkill = (name) => {
-  return { name, questions: [], taskDescription: "" };
+  return { name, questions: [], taskDescription: "", questionSkillName: "" };
 };
 
 function SkillVerification({ alert, lang, token, changeTab }) {
@@ -1843,6 +1933,10 @@ function SkillVerification({ alert, lang, token, changeTab }) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [verifications, setVerifications] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const currentSkillNames = new Set(skillOptions.map((item) => normalizeSkillName(item.name)));
+  const latestVerifications = latestVerificationPerSkill(
+    verifications.filter((item) => currentSkillNames.has(normalizeSkillName(item.skill_name)))
+  );
   useEffect(() => {
     api("/profiles/me", { headers: { Authorization: `Bearer ${token}` } })
       .then(({ profile }) => {
@@ -1858,14 +1952,14 @@ function SkillVerification({ alert, lang, token, changeTab }) {
     setLoadingQuestions(true);
     api(`/skills/questions?skillName=${encodeURIComponent(skill.name)}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((data) => {
-        setSelected((current) => current?.name === skill.name ? { ...current, questions: data.questions || [], taskDescription: data.taskDescription || "" } : current);
-        setSkillOptions((items) => items.map((item) => item.name === skill.name ? { ...item, questions: data.questions || [], taskDescription: data.taskDescription || "" } : item));
+        setSelected((current) => normalizeSkillName(current?.name) === normalizeSkillName(skill.name) ? { ...current, questions: data.questions || [], taskDescription: data.taskDescription || "", questionSkillName: skill.name } : current);
+        setSkillOptions((items) => items.map((item) => normalizeSkillName(item.name) === normalizeSkillName(skill.name) ? { ...item, questions: data.questions || [], taskDescription: data.taskDescription || "", questionSkillName: skill.name } : item));
       })
       .catch((error) => Swal.fire({ title: "Verification questions", text: error.message, icon: "error", confirmButtonColor: "#0c3b32" }))
       .finally(() => setLoadingQuestions(false));
   }, [token]);
   useEffect(() => {
-    if (selected && !selected.questions?.length) loadQuestions(selected);
+    if (selected && (!selected.questions?.length || normalizeSkillName(selected.questionSkillName) !== normalizeSkillName(selected.name))) loadQuestions(selected);
   }, [loadQuestions, selected]);
   const loadVerifications = useCallback(() => api("/skills/mine", { headers: { Authorization: `Bearer ${token}` } })
     .then((data) => setVerifications(data.verifications || []))
@@ -1938,7 +2032,7 @@ function SkillVerification({ alert, lang, token, changeTab }) {
       <div className="mt-8 rounded-[26px] bg-white p-6 shadow-card sm:p-8">
         <div className="grid gap-4 sm:grid-cols-3">
           {skillOptions.map((item) => (
-            <button key={item.name} type="button" onClick={() => setSelected(item)} className={`rounded-2xl border p-4 text-left text-sm font-bold transition ${selected.name === item.name ? "border-emerald-400 bg-emerald-50 text-emerald-800" : "border-slate-100 text-slate-500 hover:border-emerald-200"}`}>
+            <button key={item.name} type="button" onClick={() => { const next = taskForSkill(item.name); setSelected(next); loadQuestions(next); }} className={`rounded-2xl border p-4 text-left text-sm font-bold transition ${selected.name === item.name ? "border-emerald-400 bg-emerald-50 text-emerald-800" : "border-slate-100 text-slate-500 hover:border-emerald-200"}`}>
               <FiCheckCircle className="mb-4 text-xl" />{item.name}
             </button>
           ))}
@@ -1959,7 +2053,7 @@ function SkillVerification({ alert, lang, token, changeTab }) {
         </label>
       </div>
       <div className="mt-8 flex items-center justify-between"><h2 className="text-xl font-bold text-forest">My submissions</h2><button onClick={loadVerifications} className="text-xs font-bold text-emerald-700">Refresh status</button></div>
-      {loadingHistory ? <p className="mt-4 text-sm text-slate-400">Loading submissions...</p> : verifications.length ? <div className="mt-4 grid gap-4">{verifications.map((verification) => <VerificationCard key={verification.id} verification={verification} action={verification.status === "failed" ? retry : null} actionLabel="Retry analysis" />)}</div> : <p className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-400">No skill verification submitted yet.</p>}
+      {loadingHistory ? <p className="mt-4 text-sm text-slate-400">Loading submissions...</p> : latestVerifications.length ? <div className="mt-4 grid gap-4">{latestVerifications.map((verification) => <VerificationCard key={verification.id} verification={verification} action={verification.status === "failed" ? retry : null} actionLabel="Retry analysis" />)}</div> : <p className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-400">No skill verification submitted yet.</p>}
     </div>
   );
   return (
@@ -2029,9 +2123,28 @@ const toArray = (value) => {
 };
 const textToList = (value, separator = /\r?\n/) => String(value || "").split(separator).map((item) => item.trim()).filter(Boolean);
 const listToText = (value) => toArray(value).map((item) => typeof item === "string" ? item : [item.title, item.url, item.description].filter(Boolean).join(" | ")).join("\n");
+const normalizeSkillName = (value) => String(value || "").trim().toLowerCase();
+const badgesBySkill = (badges = []) => badges.reduce((lookup, badge) => {
+  const key = normalizeSkillName(badge.skill_name);
+  if (key && !lookup[key]) lookup[key] = badge;
+  return lookup;
+}, {});
+
+function SkillChip({ skill, badge, className = "" }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-black ${badge ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-emerald-100 bg-emerald-50 text-emerald-700"} ${className}`}
+      title={badge ? `${badge.badge_label || "Verified skill"} - ${Math.round(Number(badge.ai_score || 0))}%` : undefined}
+    >
+      {skill}
+      {badge && <span className="inline-flex items-center gap-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-black uppercase text-emerald-700 ring-1 ring-emerald-100"><FiAward /> Verified {Math.round(Number(badge.ai_score || 0))}%</span>}
+    </span>
+  );
+}
 
 function ProfileManager({ lang, session }) {
   const [profile, setProfile] = useState(null);
+  const [verifiedBadges, setVerifiedBadges] = useState([]);
   const [loading, setLoading] = useState(true);
   const token = session.token;
   const authHeaders = { Authorization: `Bearer ${token}` };
@@ -2050,10 +2163,16 @@ function ProfileManager({ lang, session }) {
       .catch((error) => Swal.fire({ title: "Profile", text: error.message, icon: "error" }))
       .finally(() => setLoading(false));
   }, [token]);
+  useEffect(() => {
+    if (!isFreelancer || !profile?.id) return;
+    api(`/skills/badges/${profile.id}`)
+      .then((data) => setVerifiedBadges(data.badges || []))
+      .catch(() => setVerifiedBadges([]));
+  }, [isFreelancer, profile?.id]);
   const field = (name) => (event) => setProfile({ ...profile, [name]: event.target.value });
   const save = async () => {
     try {
-      await api("/profiles/me", {
+      const result = await api("/profiles/me", {
         method: "PUT",
         headers: authHeaders,
         body: JSON.stringify({
@@ -2066,7 +2185,11 @@ function ProfileManager({ lang, session }) {
           social_links: textToList(profile.socialLinksText),
         }),
       });
-      Swal.fire({ title: tx(lang, "প্রোফাইল আপডেট হয়েছে", "Profile updated"), icon: "success", confirmButtonColor: "#0c3b32" });
+      if (isFreelancer && result.invalidatedVerifiedSkills?.length) {
+        const invalidated = result.invalidatedVerifiedSkills.map(normalizeSkillName);
+        setVerifiedBadges((badges) => badges.filter((badge) => !invalidated.includes(normalizeSkillName(badge.skill_name))));
+      }
+      Swal.fire({ title: "Profile updated", text: result.message, icon: "success", confirmButtonColor: "#0c3b32" });
     } catch (error) { Swal.fire({ title: "Profile", text: error.message, icon: "error" }); }
   };
   const uploadAvatar = async (event) => {
@@ -2118,15 +2241,16 @@ function ProfileManager({ lang, session }) {
             <ProfileTextarea label="Education / certifications (one per line)" value={profile.educationText || ""} onChange={field("educationText")} placeholder="BSc in Software Engineering" />
             <ProfileTextarea label="Social / professional links (one per line)" value={profile.socialLinksText || ""} onChange={field("socialLinksText")} placeholder="https://github.com/username" />
           </section>
-          <MarketplaceProfilePreview profile={profile} avatar={avatar} />
+          <MarketplaceProfilePreview profile={profile} avatar={avatar} verifiedBadges={verifiedBadges} />
         </div>}
       </div>
     </div>
   );
 }
 
-function MarketplaceProfilePreview({ profile, avatar }) {
+function MarketplaceProfilePreview({ profile, avatar, verifiedBadges = [] }) {
   const skills = textToList(profile.skillsText, ",");
+  const verifiedSkillLookup = badgesBySkill(verifiedBadges);
   const languages = textToList(profile.languagesText, ",");
   const portfolio = textToList(profile.portfolioText).map(parseProfileLine).filter((item) => item.title);
   const experience = textToList(profile.experienceText).slice(0, 3);
@@ -2150,7 +2274,7 @@ function MarketplaceProfilePreview({ profile, avatar }) {
         <Metric label="Projects" value={`${portfolio.length} item${portfolio.length === 1 ? "" : "s"}`} />
       </div>
       <p className="mt-5 text-sm leading-7 text-slate-600">{profile.bio || "Write a confident overview that explains your niche, process, and business results for clients."}</p>
-      <div className="mt-5 flex flex-wrap gap-2">{skills.slice(0, 10).map((skill) => <span key={skill} className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-black text-emerald-700">{skill}</span>)}</div>
+      <div className="mt-5 flex flex-wrap gap-2">{skills.slice(0, 10).map((skill) => <SkillChip key={skill} skill={skill} badge={verifiedSkillLookup[normalizeSkillName(skill)]} />)}</div>
       <div className="mt-6 rounded-2xl border border-slate-100 p-4">
         <div className="flex items-center justify-between gap-3"><h4 className="font-black text-forest">Portfolio</h4><FiExternalLink className="text-emerald-600" /></div>
         <div className="mt-3 space-y-3">{portfolio.length ? portfolio.slice(0, 3).map((item) => <div key={`${item.title}-${item.url}`} className="rounded-2xl bg-slate-50 p-3"><p className="text-sm font-black text-forest">{item.title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{item.description || item.url || "Case study summary pending"}</p></div>) : <p className="text-sm text-slate-400">Add portfolio projects to make this section look like a seller profile.</p>}</div>
@@ -2280,6 +2404,45 @@ function AdminDashboard({ lang, token }) {
     <div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-card">{users.map((user) => <div key={user.id} className="flex items-center justify-between border-b border-slate-100 p-4 last:border-0"><div><p className="font-bold text-forest">{user.name}</p><p className="mt-1 text-xs text-slate-400">{user.email || user.mobile}</p></div><span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold capitalize text-emerald-700">{user.role}</span></div>)}</div>
   </div>;
   return <div><h1 className="font-bangla text-3xl font-bold text-forest">{tx(lang, "অ্যাডমিন ড্যাশবোর্ড", "Admin dashboard")}</h1><p className="mt-2 text-slate-500">{tx(lang, "ব্যবহারকারী এবং তাদের ভূমিকা পর্যবেক্ষণ করুন।", "Monitor users and their roles.")}</p><div className="mt-7 overflow-hidden rounded-2xl bg-white shadow-card">{users.map((user) => <div key={user.id} className="flex items-center justify-between border-b border-slate-100 p-4 last:border-0"><div><p className="font-bold text-forest">{user.name}</p><p className="mt-1 text-xs text-slate-400">{user.email || user.mobile}</p></div><span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold capitalize text-emerald-700">{user.role}</span></div>)}</div></div>;
+}
+
+function AdminNidVerificationPage({ token }) {
+  const [verifications, setVerifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const authHeaders = () => ({ Authorization: `Bearer ${token}` });
+  const loadVerifications = useCallback(() => {
+    setLoading(true);
+    api("/admin/nid-verifications", { headers: authHeaders() })
+      .then((data) => {
+        setVerifications(data.verifications || []);
+        setError("");
+      })
+      .catch((requestError) => setError(requestError.message))
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+  useEffect(() => { loadVerifications(); }, [loadVerifications]);
+  const reviewNid = async (verification, status) => {
+    let reason = "";
+    if (status === "rejected") {
+      const result = await Swal.fire({ title: `Reject NID for ${verification.name}`, input: "textarea", inputPlaceholder: "Write the rejection reason", showCancelButton: true, confirmButtonColor: "#0c3b32", inputValidator: (value) => !value.trim() ? "Provide a rejection reason." : undefined });
+      if (!result.isConfirmed) return;
+      reason = result.value;
+    } else {
+      const result = await Swal.fire({ title: `Verify NID for ${verification.name}?`, text: "This user will be able to access the dashboard after approval.", icon: "question", showCancelButton: true, confirmButtonColor: "#0c3b32" });
+      if (!result.isConfirmed) return;
+    }
+    try {
+      await api(`/admin/nid-verifications/${verification.id}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status, reason }) });
+      await loadVerifications();
+      Swal.fire({ title: status === "verified" ? "NID verified" : "NID rejected", icon: "success", confirmButtonColor: "#0c3b32" });
+    } catch (requestError) {
+      Swal.fire({ title: "NID review failed", text: requestError.message, icon: "error" });
+    }
+  };
+  const pendingCount = verifications.filter((item) => item.status === "pending").length;
+  return <div><div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-3xl font-bold text-forest">NID Verification</h1><p className="mt-2 text-sm text-slate-500">Review National ID submissions before users can access their accounts.</p></div><div className="flex items-center gap-3"><span className="text-xs font-bold text-slate-400">{pendingCount} pending</span><button onClick={loadVerifications} className="rounded-full bg-white px-4 py-2 text-xs font-bold text-emerald-700 shadow-sm">Refresh</button></div></div>{error && <div className="mt-5 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">{error}</div>}{loading ? <p className="mt-8 text-sm text-slate-400">Loading NID submissions...</p> : <div className="mt-6 grid gap-4">{verifications.length ? verifications.map((verification) => <div key={verification.id} className="rounded-2xl bg-white p-5 shadow-card"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-bold text-forest">{verification.name}</h3><p className="mt-1 text-xs text-slate-400">{verification.email || verification.mobile} · {verification.role} · NID #{verification.nid_number}</p></div><span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${verification.status === "verified" ? "bg-emerald-100 text-emerald-700" : verification.status === "rejected" ? "bg-red-100 text-red-700" : "bg-cyan-100 text-cyan-700"}`}>{verification.status}</span></div><div className="mt-4 flex flex-wrap gap-2"><a href={`${ASSET_URL}${verification.front_image_url}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-700"><FiExternalLink /> Front side</a><a href={`${ASSET_URL}${verification.back_image_url}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-700"><FiExternalLink /> Back side</a></div>{verification.rejection_reason && <p className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600">Reason: {verification.rejection_reason}</p>}{verification.status === "pending" && <div className="mt-4 flex flex-wrap gap-2"><button onClick={() => reviewNid(verification, "verified")} className="inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2 text-xs font-bold text-white"><FiCheckCircle /> Verified</button><button onClick={() => reviewNid(verification, "rejected")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-xs font-bold text-red-700"><FiX /> Reject</button></div>}</div>) : <p className="rounded-2xl bg-white p-5 text-sm text-slate-400 shadow-card">No NID verification submissions yet.</p>}</div>}</div>;
 }
 
 function MessageCenter({ token, user, initialConversationId }) {
@@ -2727,7 +2890,7 @@ export default function Home() {
   };
 
   if (!ready) {
-    return <div className="grid min-h-screen place-items-center bg-[#f5faf7] text-forest"><div className="text-center"><div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-100 text-2xl"><FiShield /></div><p className="mt-4 text-sm font-bold text-slate-500">Loading SkillShurokkha...</p></div></div>;
+    return <div className="grid min-h-screen place-items-center bg-[#f6f8f4] text-forest"><div className="text-center"><div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-100 text-2xl"><FiShield /></div><p className="mt-4 text-sm font-bold text-slate-500">Loading SkillShurokkha...</p></div></div>;
   }
 
   return (
